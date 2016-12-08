@@ -25,6 +25,7 @@
     - name: Install dev tools
       apt: name={{item}} state=present
       with_items:
+        - acl
         - build-essential
         - git
         - python3
