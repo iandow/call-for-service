@@ -17,12 +17,15 @@ from django.core.management.base import BaseCommand
 # - Latitude
 # - Longitude
 # - Priority
+# - Source
 # - District
+# - Beat
 # - Nature Code
 # - Nature Text
 # - Close Code
 # - Close Text
-from core.models import District, Priority, Nature, CloseCode, Call
+from core.models import (District, Beat, Priority, Nature, CallSource, CloseCode, Call,
+                         City)
 
 
 def isnan(x):
@@ -33,6 +36,11 @@ def safe_int(x):
     if isnan(x):
         return None
     return int(x)
+
+def safe_float(x):
+    if isnan(x):
+        return None
+    return float(x)
 
 
 def safe_datetime(x):
@@ -89,10 +97,21 @@ class Command(BaseCommand):
                                      'Close Code': str, 'Zip': str})
 
         self.log("CSV loaded")
-        self.create_districts()
-        self.create_priorities()
-        self.create_natures()
-        self.create_close_codes()
+
+        creation_methods = [
+            ('District', self.create_districts),
+            ('Beat', self.create_beats),
+            ('Priority', self.create_priorities),
+            ('Nature Code', self.create_natures),
+            ('Close Code', self.create_close_codes),
+            ('Source Code', self.create_sources),
+            ('City', self.create_cities),
+        ]
+
+        for col, method in creation_methods:
+            if col in self.df:
+                method()
+
         self.create_calls()
 
     def create_calls(self):
@@ -105,6 +124,8 @@ class Command(BaseCommand):
                 if Call.objects.filter(pk=c['Internal ID']).count() > 0:
                     continue
 
+                safe_get = lambda col: c[col] if col in c else None
+
                 call = Call(call_id=c['Internal ID'],
                             time_received=safe_datetime(c['Time Received']),
                             first_unit_dispatch=safe_datetime(
@@ -112,14 +133,17 @@ class Command(BaseCommand):
                             first_unit_arrive=safe_datetime(
                                 c['Time Arrived']),
                             time_closed=safe_datetime(c['Time Closed']),
-                            street_address=c['Street Address'],
-                            zip_code=safe_zip(c['Zip']),
-                            nature_id=safe_int(c['Nature ID']),
-                            priority_id=safe_int(c['Priority ID']),
-                            district_id=safe_int(c['District ID']),
-                            close_code_id=safe_int(c['Close Code ID']),
-                            geox=c['Longitude'],
-                            geoy=c['Latitude'])
+                            street_address=safe_get('Street Address'),
+                            zip_code=safe_zip(safe_get('Zip')),
+                            nature_id=safe_int(safe_get('Nature ID')),
+                            city_id=safe_int(safe_get('City ID')),
+                            priority_id=safe_int(safe_get('Priority ID')),
+                            district_id=safe_int(safe_get('District ID')),
+                            beat_id=safe_int(safe_get('Beat ID')),
+                            call_source_id=safe_int(safe_get('Source ID')),
+                            close_code_id=safe_int(safe_get('Close Code ID')),
+                            geox=safe_float(c['Longitude']),
+                            geoy=safe_float(c['Latitude']))
                 call.update_derived_fields()
                 calls.append(call)
 
@@ -133,6 +157,17 @@ class Command(BaseCommand):
                 pdb.set_trace()
 
 
+    def create_beats(self):
+        self.log("Creating beats")
+        df = self.df
+
+        beat_names = safe_sorted(df['Beat'].unique())
+        beats = [Beat.objects.get_or_create(descr=name)[0]
+                 for name in beat_names]
+        beat_map = {b.descr: b.beat_id for b in beats}
+        df['Beat ID'] = df['Beat'].apply(lambda x: beat_map.get(x),
+                                         convert_dtype=False)
+
     def create_districts(self):
         self.log("Creating districts")
         df = self.df
@@ -144,6 +179,17 @@ class Command(BaseCommand):
         df['District ID'] = df['District'].apply(lambda x: district_map.get(x),
                                                  convert_dtype=False)
 
+    def create_cities(self):
+        self.log("Creating cities")
+        df = self.df
+
+        city_names = safe_sorted(df['City'].unique())
+        cities = [City.objects.get_or_create(descr=name)[0]
+                  for name in city_names]
+        city_map = {c.descr: c.city_id for c in cities}
+        df['City ID'] = df['City'].apply(lambda x: city_map.get(x),
+                                         convert_dtype=False)
+
     def create_priorities(self):
         self.log("Creating priorities")
         df = self.df
@@ -154,6 +200,20 @@ class Command(BaseCommand):
         priority_map = {p.descr: p.priority_id for p in priorities}
         df['Priority ID'] = df['Priority'].apply(lambda x: priority_map.get(x),
                                                  convert_dtype=False)
+
+    def create_sources(self):
+        self.log("Creating sources")
+        df = self.df
+
+        source_tuples = [x for x in pd.DataFrame(
+            df.groupby('Source Code')['Source Text'].min()).itertuples()
+                         if x[0]]
+        sources = [CallSource.objects.get_or_create(code=s[0], defaults={'descr': s[1]})[0]
+                   for s in source_tuples]
+        source_map = {s.code: s.call_source_id for s in sources}
+        df['Source ID'] = df['Source Code'].apply(lambda x: source_map.get(x),
+                                             convert_dtype=False)
+
 
     def create_natures(self):
         self.log("Creating natures")

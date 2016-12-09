@@ -1,4 +1,4 @@
-# Loading data
+# Loading data - Calls
 
 ## Data format
 
@@ -26,6 +26,8 @@ that end in "Code" and "Text" come in pairs and must be matched.
 - Latitude
 - Longitude
 - Priority
+- Source
+- Beat
 - District
 - Nature Code
 - Nature Text
