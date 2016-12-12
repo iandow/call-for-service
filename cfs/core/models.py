@@ -244,6 +244,7 @@ class CallLog(models.Model):
 class CallSource(ModelWithDescr):
     call_source_id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=10, unique=True)
+    is_self_initiated = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'call_source'
@@ -303,6 +304,7 @@ class Nature(ModelWithDescr):
     nature_id = models.AutoField(primary_key=True)
     nature_group = models.ForeignKey('NatureGroup', blank=True, null=True)
     key = models.CharField(max_length=10, blank=True, null=True, unique=True)
+    is_directed_patrol = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'nature'
@@ -324,7 +326,6 @@ class Officer(models.Model):
 
     class Meta:
         db_table = 'officer'
-
 
 class Priority(ModelWithDescr, SortableMixin):
     priority_id = models.AutoField(primary_key=True)

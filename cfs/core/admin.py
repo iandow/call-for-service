@@ -101,7 +101,7 @@ class BureauAdmin(admin.ModelAdmin):
 
 @admin.register(CallSource)
 class CallSourceAdmin(admin.ModelAdmin):
-    list_display = ('descr', 'code',)
+    list_display = ('descr', 'code', 'is_self_initiated',)
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
@@ -154,7 +154,7 @@ class NatureAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
-    list_display = ('descr', 'nature_group',)
+    list_display = ('descr', 'nature_group', 'is_directed_patrol',)
 
 
 @admin.register(NatureGroup)
