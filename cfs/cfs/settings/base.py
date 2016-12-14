@@ -51,7 +51,6 @@ INSTALLED_APPS = (
     'hooks',
     'adminsortable',
     'geoposition',
-    'officer_allocation',
 
     'core',
 ) + PLUGINS
