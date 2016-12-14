@@ -42,8 +42,6 @@ class InCallPeriod(MaterializedView):
     in_call_id = models.IntegerField(primary_key=True)
     call_unit = models.ForeignKey(CallUnit, db_column="call_unit_id",
                                   related_name="+")
-    shift = models.ForeignKey(Shift, db_column="shift_id",
-                              related_name="+")
     call = models.ForeignKey(Call, db_column="call_id",
                              related_name="+",
                              on_delete=models.DO_NOTHING)

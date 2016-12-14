@@ -69,13 +69,14 @@ And the "shift" file should contain the following fields:
  - In Timestamp
  - Out Timestamp
  
-You will also need to do some configuration through the admin interface in order for the officer allocation view to work properly.  **NOTE**: You must perform this step _before_ you load any data; the officer allocation configuration must be set up correctly before data is loaded for the loading scripts to work correctly.
+You will also need to do some configuration through the admin interface in order for the officer allocation view to work properly.  **NOTE**: You must perform these steps _after_ your call data is loaded but _before_ you load any officer allocation data; the officer allocation configuration must be set up correctly before its data is loaded for the loading scripts to work correctly.
 
 1. Log in to the admin interface as described in [the Configuration docs](config.md).
 2. Click on "Call sources".  Identify which call sources correspond to "Self Initiated" calls (i.e., calls initiated by officers rather than civilians).  For each such source, click on its description to access the detailed edit page.  Click the checkbox labeled "Is self initiated" and click "Save".  You should be returned to the call source list, and the source you just edited should now have a green check mark in the "Is self initiated column".  Repeat as needed.  Once this is done for all "Self Initiated" sources, return to the main admin page.
-3. Click on "Natures".  Repeat the process outlined in 2. but for natures corresponding to "Directed Patrols" (i.e., officers patrolling a specific area).  Mark each such nature accordingly and save your changes.
+3. Click on "Natures".  Repeat the process outlined in 2. but for natures corresponding to "Directed Patrols" (i.e., officers patrolling a specific area).  Mark each such nature accordingly and save your changes.  Return to the main admin page when done.
+4. Click on "Transactions".  For all transactions in your data associated with an officer's involvement "starting" on a call (ex. "Dispatched"), click "Add transaction", enter the corresponding code (must be an exact, case-sensitive match) and the description, and check "Is start".  Then, for all transactions associated with an officer's involvement "ending" on a call (ex. "Cleared", "Canceled"), do the same; click "Add transaction", enter the exact code and description, and check "Is end".  Save and return to the main admin page.  You do not need to enter _all_ the transactions in your data; you only need to create these special ones ahead of time so the system knows which ones they are.  The remaining transactions will be created in the database during data load.
  
-Once you have correctly configured the site for your data and have loaded your call data as described above, run the following command from the top level directory of this repository:
+Once you have correctly configured the site for your data **and have loaded your call data** as described above, run the following command from the top level directory of this repository:
 
     ./cfs/manage.py load_ofc_alloc --call-log-file <location of your call log CSV file> --shift-file <location of your shift CSV file>
     

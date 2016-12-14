@@ -3,8 +3,6 @@ For each call, displays the start (dispatched) and end (cleared) times for each 
 call_unit_id of that unit.
 
 The view is materialized because it takes several seconds to create.  This is inefficient when querying it multiple times.
-
-NOTE: This is an older version of the view that contains some hard-coded values from Durham's data.  Refer to "generalized_in_call.sql" for the updated version.
 */
 
  -- ensure these indexes exist or else it will be super slow
@@ -13,22 +11,19 @@ NOTE: This is an older version of the view that contains some hard-coded values 
  --CREATE INDEX call_log_call_unit_id_ndx ON call_log(call_unit_id);
 DROP MATERIALIZED VIEW IF EXISTS in_call CASCADE;
 
-
 CREATE MATERIALIZED VIEW in_call AS
 WITH
-start_ids AS (SELECT transaction_id FROM transaction WHERE descr = 'Dispatched'),
-end_ids AS (SELECT transaction_id FROM transaction WHERE descr in ('Cleared','Canceled'))
- SELECT 
+start_ids AS (SELECT transaction_id FROM transaction WHERE is_start = TRUE),
+end_ids AS (SELECT transaction_id FROM transaction WHERE is_end = TRUE)
+ SELECT
     ROW_NUMBER() OVER (ORDER BY c.call_id ASC) AS in_call_id,
     c.call_id,
     start_.time_recorded AS start_time,
     end_.time_recorded AS end_time,
-    start_.shift_id,
     start_.call_unit_id AS call_unit_id
    FROM call c, (
        SELECT cl1.call_log_id,
             cl1.transaction_id,
-            cl1.shift_id,
             cl1.time_recorded,
             cl1.call_id,
             cl1.call_unit_id,
@@ -38,7 +33,6 @@ end_ids AS (SELECT transaction_id FROM transaction WHERE descr in ('Cleared','Ca
     ) start_, (
         SELECT cl2.call_log_id,
             cl2.transaction_id,
-            cl2.shift_id,
             cl2.time_recorded,
             cl2.call_id,
             cl2.call_unit_id,
@@ -49,7 +43,7 @@ end_ids AS (SELECT transaction_id FROM transaction WHERE descr in ('Cleared','Ca
   WHERE start_.call_id = c.call_id
     AND end_.call_id = c.call_id
     AND start_.call_unit_id = end_.call_unit_id
-    
+
     -- ensure our start is the closest dispatch to the clear/cancel
     AND start_.time_recorded = (
       SELECT MAX(time_recorded)
@@ -68,7 +62,7 @@ end_ids AS (SELECT transaction_id FROM transaction WHERE descr in ('Cleared','Ca
       ORDER BY call_id, time_recorded DESC
     */
     )
-    
+
     -- ensure our end is the closest clear/cancel to the dispatch
     AND end_.time_recorded =  (
       SELECT MIN(time_recorded)
@@ -87,7 +81,7 @@ end_ids AS (SELECT transaction_id FROM transaction WHERE descr in ('Cleared','Ca
       ORDER BY call_id, time_recorded
     */
     )
-    
+
     /* I don't think we actually need to check for this; looks like
        dispatches are always followed by a cancel or clear before another
        dispatch

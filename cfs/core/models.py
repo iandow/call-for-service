@@ -383,6 +383,8 @@ class Transaction(models.Model):
     transaction_id = models.AutoField(primary_key=True)
     code = models.CharField(max_length=10, unique=True)
     descr = models.TextField("Description", blank=True)
+    is_start = models.BooleanField(default=False)
+    is_end = models.BooleanField(default=False)
 
     def __str__(self):
         return self.code

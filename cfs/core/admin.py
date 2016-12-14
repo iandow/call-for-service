@@ -198,7 +198,7 @@ class SquadAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('code',)
+    list_display = ('descr', 'code', 'is_start', 'is_end',)
 
 
 @admin.register(Unit)
