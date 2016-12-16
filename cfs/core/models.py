@@ -257,6 +257,7 @@ class CallUnit(ModelWithDescr):
     beat = models.ForeignKey("Beat", blank=True, null=True, related_name="+")
     district = models.ForeignKey("District", blank=True, null=True,
                                  related_name="+")
+    is_patrol_unit = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'call_unit'

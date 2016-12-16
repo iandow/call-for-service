@@ -8,9 +8,10 @@ overlap here.  We'll use this to drive the officer allocation view.
 DROP MATERIALIZED VIEW IF EXISTS officer_activity CASCADE;
 
 CREATE MATERIALIZED VIEW officer_activity AS
-    -- we only want call_units that we have shift data for
+    -- we only want call_units that are patrol units; for others, we don't care about
+    -- how their time is allocated
   WITH
-    valid_call_units AS (SELECT DISTINCT call_unit_id FROM shift_unit),
+    valid_call_units AS (SELECT call_unit_id FROM call_unit WHERE is_patrol_unit = TRUE),
     directed_patrol_natures AS (SELECT nature_id FROM nature WHERE is_directed_patrol = TRUE),
     self_initiated_sources AS (SELECT call_source_id FROM call_source WHERE is_self_initiated = TRUE)
   SELECT

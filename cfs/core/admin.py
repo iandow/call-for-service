@@ -109,7 +109,7 @@ class CallSourceAdmin(admin.ModelAdmin):
 
 @admin.register(CallUnit)
 class CallUnitAdmin(admin.ModelAdmin):
-    list_display = ('descr', 'squad', 'beat', 'district',)
+    list_display = ('descr', 'squad', 'beat', 'district', 'is_patrol_unit',)
     inlines = [ShiftUnitInline]
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
