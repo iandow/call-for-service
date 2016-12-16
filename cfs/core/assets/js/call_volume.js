@@ -321,6 +321,10 @@ if (siteConfig.use_call_source) {
 }
 
 if (siteConfig.use_beat || siteConfig.use_district) {
+    const region = siteConfig.use_beat
+          ? 'beat'
+          : 'district';
+
     var volumeMap = new RegionMap({
         el: "#map",
         dashboard: dashboard,
@@ -328,7 +332,8 @@ if (siteConfig.use_beat || siteConfig.use_district) {
         format: function (val) {
             return d3.format(",.2f")(val).replace(/\.0+$/, "");
         },
-        dataDescr: "Call Volume"
+        dataDescr: "Call Volume",
+        region: region
     });
 
     monitorChart(dashboard, "data.map_data", volumeMap.update);
