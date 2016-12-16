@@ -123,7 +123,9 @@ var ClusterMap = function (options) {
         var locations = dashboard.get('data.locations');
         if (locations) {
             locations = locations.filter(function (d) {
-                return bounds.contains(new L.LatLng(d.lat, d.lng))
+                return !_.isNull(d.lat)
+                    && !_.isNull(d.lng)
+                    && bounds.contains(new L.LatLng(d.lat, d.lng));
             });
             dashboard.set('data.top_locations', getTopAddresses(locations, 20));
         }
@@ -182,12 +184,28 @@ var ClusterMap = function (options) {
             layer.on({});
         }
 
+        const geojsonURL = siteConfig.geojson_url;
+        let region;
+        if (siteConfig.use_beat) {
+            region = 'beat';
+        }
+        else if (siteConfig.use_district) {
+            region = 'district';
+        }
+
+        if (!geojsonURL) {
+            throw "You must set a URL to your GeoJSON file in core settings before using this map.";
+        }
+        else if (!region) {
+            throw "You must select either beat or district in core settings before using this map.";
+        }
+
         d3.json(
-            "/static/beats.json",
+            siteConfig.geojson_url,
             function (json) {
                 json.features = _(json.features).reject(
                     function (d) {
-                        return d.properties.LAWDIST === "DSO";
+                        return !d.properties[region];
                     });
 
                 var myStyle = {
