@@ -160,12 +160,17 @@ function cleanupData(data) {
 }
 
 if (siteConfig.use_beat || siteConfig.use_district) {
+    const region = siteConfig.use_beat
+          ? 'beat'
+          : 'district';
+
     var responseTimeMap = new RegionMap({
         el: "#map",
         dashboard: dashboard,
         colorScheme: colorbrewer.Oranges,
         format: durationFormat,
-        dataDescr: "Officer Response Time"
+        dataDescr: "Officer Response Time",
+        region: region
     });
 
     monitorChart(dashboard, "data.map_data", responseTimeMap.update);
