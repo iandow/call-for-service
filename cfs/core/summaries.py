@@ -157,7 +157,7 @@ class CallVolumeOverview(CallOverview):
     def volume_by_source(self):
         results = self.qs \
             .annotate(id=Case(
-            When(call_source__descr="Self Initiated", then=0),
+            When(call_source__is_self_initiated=True, then=0),
             default=1,
             output_field=IntegerField())) \
             .values("id") \
