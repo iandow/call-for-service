@@ -136,10 +136,10 @@ class CallQuerySet(models.QuerySet):
     def initiated_by(self, value):
         if str(value) == "0":
             return self.filter(
-                call_source=CallSource.objects.get(descr="Self Initiated"))
+                call_source=CallSource.objects.get(is_self_initiated=True))
         elif str(value) == "1":
             return self.exclude(
-                call_source=CallSource.objects.get(descr="Self Initiated"))
+                call_source=CallSource.objects.get(is_self_initiated=True))
         else:
             return self
 
