@@ -100,11 +100,11 @@ function cleanupData(data) {
     });
     temp_allocation_data[2].values.push({
       "x": time,
-      "y": oos
+      "y": dp
     });
     temp_allocation_data[3].values.push({
       "x": time,
-      "y": dp
+      "y": oos
     });
     temp_allocation_data[4].values.push({
       "x": time,
