@@ -27,6 +27,7 @@ class OfficerActivity(MaterializedView):
     def update_view(cls):
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW officer_activity")
+            cursor.execute("REFRESH MATERIALIZED VIEW time_sample")
             cursor.execute(
                 "REFRESH MATERIALIZED VIEW discrete_officer_activity")
 

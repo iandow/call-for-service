@@ -65,7 +65,6 @@ More specifically, the "call log" file should contain the following fields (agai
 And the "shift" file should contain the following fields:
 
  - Unit
- - Officer ID
  - In Timestamp
  - Out Timestamp
  

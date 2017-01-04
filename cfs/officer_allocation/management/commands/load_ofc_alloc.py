@@ -3,7 +3,7 @@ import pandas as pd
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from core.models import (CallLog, Transaction, CallUnit, ShiftUnit,
+from core.models import (CallLog, Transaction, CallUnit, ShiftUnit, Shift,
                          update_materialized_views)
 from officer_allocation.models import (OfficerActivityType)
 
@@ -51,12 +51,11 @@ class Command(BaseCommand):
         self.create_transactions()
 
         self.log("Loading shift CSV")
-        self.shift = pd.read_csv(options['shift_file'],
+        self.shifts = pd.read_csv(options['shift_file'],
                                  parse_dates=['In Timestamp', 'Out Timestamp'],
-                                 dtype={'Unit': str, 'Officer ID': str})
+                                 dtype={'Unit': str})
 
         self.create_units()
-        self.create_officers()
 
         self.create_call_log()
         self.create_shifts()
@@ -82,7 +81,7 @@ class Command(BaseCommand):
     def create_units(self):
         self.log("Creating units")
 
-        unit_series = pd.concat([self.call_log['Unit'], self.shift['Unit']])
+        unit_series = pd.concat([self.call_log['Unit'], self.shifts['Unit']])
 
         unit_names = safe_sorted(unit_series.unique())
         units = [CallUnit.objects.get_or_create(descr=name)[0]
@@ -90,15 +89,8 @@ class Command(BaseCommand):
         unit_map = {u.descr: u.call_unit_id for u in units}
         self.call_log['Unit ID'] = self.call_log['Unit'].apply(lambda x: unit_map.get(x),
                                                                convert_dtype=False)
-        self.shift['Unit ID'] = self.shift['Unit'].apply(lambda x: unit_map.get(x),
+        self.shifts['Unit ID'] = self.shifts['Unit'].apply(lambda x: unit_map.get(x),
                                                          convert_dtype=False)
-
-    def create_officers(self):
-        self.log("Creating officers")
-
-        officer_ids = safe_sorted(self.shift['Officer ID'].unique())
-        for officer_id in officer_ids:
-            _ = Officer.objects.get_or_create(officer_id=officer_id)
 
     def create_call_log(self):
         start = 0
@@ -118,8 +110,34 @@ class Command(BaseCommand):
             start += self.batch_size
 
     def create_shifts(self):
-        # TODO
-        pass
+        self.log("Creating shifts")
+
+        # Some weirdness necessary here for backwards compatibility --
+        # Durham had shift <-> shift_unit as a 1 <-> many, where there's a shift
+        # for each unit and a shift_unit for each officer (since there can be multiple
+        # officers per unit).  We don't care about that anymore, since we don't get
+        # officer information; just create a shift for each new shift_unit to avoid
+        # issues with the rest of the code base expecting each shift_unit to correspond to
+        # a shift.
+        start = 0
+        while start < len(self.shifts):
+            batch = self.shifts[start:start + self.batch_size]
+            shift_units = []
+
+            for idx, s in batch.iterrows():
+                # Can't create the shifts in bulk, since we need their PKs to link
+                # them to the shift_units
+                shift = Shift.objects.create()
+                shift_unit = ShiftUnit(in_time=s['In Timestamp'],
+                                       out_time=s['Out Timestamp'],
+                                       call_unit_id=s['Unit ID'],
+                                       shift=shift)
+                shift_units.append(shift_unit)
+
+            ShiftUnit.objects.bulk_create(shift_units)
+            self.log("ShiftUnit {}-{} created".format(start, start+len(batch)))
+            start += self.batch_size
+
 
     def create_officer_activity_types(self):
         self.log("Creating officer activity types...")
