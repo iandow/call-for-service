@@ -42,7 +42,8 @@ class SiteConfiguration(SingletonModel):
     geo_center = GeopositionField("Center", blank=True)
     geo_ne_bound = GeopositionField("Northeast bound", blank=True)
     geo_sw_bound = GeopositionField("Southwest bound", blank=True)
-    geo_default_zoom = models.PositiveIntegerField("Default zoom level", default=11)
+    geo_default_zoom = models.PositiveIntegerField(
+        "Default zoom level", default=11)
     geojson_url = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
@@ -82,6 +83,7 @@ class ModelWithDescr(models.Model):
         abstract = True
         ordering = ['descr']
 
+
 class ModelWithCodeAndDescr(models.Model):
     code = models.CharField("Unique code", max_length=64, unique=True)
     descr = models.CharField("Description", max_length=255)
@@ -95,6 +97,13 @@ class ModelWithCodeAndDescr(models.Model):
     class Meta:
         abstract = True
         ordering = ['descr']
+
+
+class Agency(ModelWithCodeAndDescr):
+    agency_id = models.AutoField(primary_key=True)
+
+    class Meta:
+        db_table = 'agency'
 
 
 class Beat(ModelWithDescr):
@@ -115,6 +124,7 @@ class Bureau(ModelWithDescr):
 
 
 class CallQuerySet(models.QuerySet):
+
     def squad(self, value):
         if value:
             query = Q(primary_unit__squad_id=value) | Q(
@@ -157,6 +167,11 @@ class CallQuerySet(models.QuerySet):
 class Call(models.Model):
     objects = CallQuerySet.as_manager()
 
+    # Ideally, agency should not ever be null, but since we're adding
+    # it at this point, it can be. It is possible we will leave it
+    # nullable and have the case of a 1-agency install not use the
+    # agencies table.
+    agency = models.ForeignKey('Agency', blank=True, null=True)
     call_id = models.CharField(max_length=64, primary_key=True)
     time_received = DateTimeNoTZField(db_index=True)
     time_routed = DateTimeNoTZField(blank=True, null=True)
@@ -327,6 +342,7 @@ class Officer(models.Model):
 
     class Meta:
         db_table = 'officer'
+
 
 class Priority(ModelWithDescr, SortableMixin):
     priority_id = models.AutoField(primary_key=True)
