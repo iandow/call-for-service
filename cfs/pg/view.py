@@ -36,6 +36,10 @@ class View(models.Model):
 
 class MaterializedView(View):
     @classmethod
+    def dependencies(cls):
+        return []
+
+    @classmethod
     def update_view(cls):
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW {}".format(cls._meta.db_table))

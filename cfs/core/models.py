@@ -64,9 +64,26 @@ class DateTimeNoTZField(models.DateTimeField):
         return 'timestamp without time zone'
 
 
+def update_materialized_view_dependencies(view):
+    dependencies = view.dependencies()
+    updated_views = set()
+
+    if len(dependencies) > 0:
+        for dependency in dependencies:
+            update_materialized_view_dependencies(dependency)
+            updated_views.add(dependency)
+
+    view.update_view()
+    updated_views.add(view)
+    return updated_views
+
 def update_materialized_views():
+    updated_views = set()
+
     for view_cls in MaterializedView.__subclasses__():
-        view_cls.update_view()
+        if view_cls not in updated_views:
+            new_updated_views = update_materialized_view_dependencies(view_cls)
+            updated_views.update(new_updated_views)
 
 
 class ModelWithDescr(models.Model):

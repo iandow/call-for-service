@@ -24,6 +24,10 @@ class OfficerActivity(MaterializedView):
         managed = False
 
     @classmethod
+    def dependencies(cls):
+        return [InCallPeriod]
+
+    @classmethod
     def update_view(cls):
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW officer_activity")
