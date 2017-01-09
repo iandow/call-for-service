@@ -9,7 +9,7 @@ from django.views.generic import View
 from url_filter.filtersets import StrictMode
 
 from core import models
-from core.models import Call
+from core.models import Call, Agency
 from core.serializers import CallExportSerializer
 from ..filters import CallFilterSet
 
@@ -38,14 +38,18 @@ def build_filter(filter_set):
 
 
 class LandingPageView(View):
-    def get(self, request):
+
+    def get(self, request, *args, **kwargs):
+        agency = Agency.objects.first()
         return render_to_response(
             "landing_page.html",
-            dict(show_allocation=(
-                'officer_allocation' in settings.INSTALLED_APPS)))
+            dict(agency=agency,
+                 show_allocation=(
+                     'officer_allocation' in settings.INSTALLED_APPS)))
 
 
 class CallListView(View):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="call_list",
@@ -53,6 +57,7 @@ class CallListView(View):
 
 
 class CallVolumeView(View):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="call_volume",
@@ -60,6 +65,7 @@ class CallVolumeView(View):
 
 
 class ResponseTimeView(View):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="response_time",
@@ -67,6 +73,7 @@ class ResponseTimeView(View):
 
 
 class MapView(View):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="call_map",
@@ -84,6 +91,7 @@ class Echo(object):
 
 
 class CSVIterator:
+
     def __init__(self, queryset, fields):
         self.queryset = queryset.iterator()
         pseudo_buffer = Echo()
@@ -98,6 +106,7 @@ class CSVIterator:
 
 
 class CallExportView(View):
+
     def get(self, request, *args, **kwargs):
         qs = Call.objects \
             .select_related('district') \

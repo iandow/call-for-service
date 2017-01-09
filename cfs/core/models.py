@@ -2,13 +2,17 @@
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
 #   * Make sure each model has one field with primary_key=True
-#   * Remove `` lines if you wish to allow Django to create, modify, and delete the table
-# Feel free to rename the models, but don't rename db_table values or field names.
+#   * Remove `` lines if you wish to allow Django to create, modify,
+# and delete the table
+# Feel free to rename the models, but don't rename db_table values or field
+# names.
 #
-# Also note: You'll have to insert the output of 'django-admin sqlcustom [app_label]'
+# Also note: You'll have to insert the output of 'django-admin sqlcustom [
+# app_label]'
 # into your database.
 from datetime import timedelta
 
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 from pg.view import MaterializedView
@@ -99,10 +103,19 @@ class ModelWithCodeAndDescr(models.Model):
         ordering = ['descr']
 
 
-class Agency(ModelWithCodeAndDescr):
+class Agency(models.Model):
+    """
+    The city or district agency under which calls fall.
+    Must have a unique code (letters and numbers only) for use in the URL.
+    """
     agency_id = models.AutoField(primary_key=True)
+    code = models.CharField("Unique code", max_length=64, unique=True,
+                            validators=[
+                                RegexValidator(regex=r'^[A-Za-z0-9]+$')])
+    descr = models.CharField("Description", max_length=255)
 
     class Meta:
+        verbose_name_plural = 'agencies'
         db_table = 'agency'
 
 
@@ -224,15 +237,19 @@ class Call(models.Model):
             self.time_received.isocalendar()
         self.dow_received = self.time_received.weekday()
 
-        if self.first_unit_arrive is not None and self.time_received is not None:
-            self.overall_response_time = self.first_unit_arrive - self.time_received
+        if self.first_unit_arrive is not None and self.time_received is not \
+                None:
+            self.overall_response_time = self.first_unit_arrive - \
+                self.time_received
 
             if self.overall_response_time < timedelta(0):
                 self.overall_response_time = None
 
-        if self.first_unit_arrive is not None and self.first_unit_dispatch is not None\
+        if self.first_unit_arrive is not None and self.first_unit_dispatch is \
+                not None \
                 and self.first_unit_arrive >= self.first_unit_dispatch:
-            self.officer_response_time = self.first_unit_arrive - self.first_unit_dispatch
+            self.officer_response_time = self.first_unit_arrive - \
+                self.first_unit_dispatch
         else:
             self.officer_response_time = self.overall_response_time
 

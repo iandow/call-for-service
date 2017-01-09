@@ -3,7 +3,7 @@ from django.forms import TextInput
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 from adminsortable.admin import SortableAdmin
-from .models import Beat, Bureau, CallSource, CallUnit, City, CloseCode, \
+from .models import Agency, Beat, Bureau, CallSource, CallUnit, City, CloseCode, \
     District, Division, Nature, NatureGroup, \
     Officer, \
     Priority, Shift, ShiftUnit, SiteConfiguration, Squad, \
@@ -45,7 +45,7 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
     )
 
 
-### model inline classes
+# model inline classes
 
 class BeatInline(admin.TabularInline):
     model = Beat
@@ -73,13 +73,17 @@ class NatureInline(admin.StackedInline):
     can_delete = False
 
 
-
 class ShiftUnitInline(admin.TabularInline):
     model = ShiftUnit
     extra = 0
 
 
-### model admin classes
+# model admin classes
+
+@admin.register(Agency)
+class AgencyAdmin(admin.ModelAdmin):
+    list_display = ('descr', 'code',)
+
 
 @admin.register(Beat)
 class BeatAdmin(admin.ModelAdmin):

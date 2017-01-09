@@ -18,11 +18,16 @@ urlpatterns = [
     url(r'^api/', include(router.urls)),
     url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^$', views.LandingPageView.as_view()),
-    url(r'^call_volume$', views.CallVolumeView.as_view()),
-    url(r'^response_time$', views.ResponseTimeView.as_view()),
-    url(r'^calls$', views.CallListView.as_view()),
-    url(r'^calls.csv$', views.CallExportView.as_view()),
-    url(r'^call_map$', views.MapView.as_view())
+    url(r'^(?P<agency_code>[A-Za-z0-9]+)/call_volume$',
+        views.CallVolumeView.as_view(), name="call_volume"),
+    url(r'^(?P<agency_code>[A-Za-z0-9]+)/response_time$',
+        views.ResponseTimeView.as_view(), name="response_time"),
+    url(r'^(?P<agency_code>[A-Za-z0-9]+)/calls$', views.CallListView.as_view(),
+        name="calls"),
+    url(r'^(?P<agency_code>[A-Za-z0-9]+)/calls.csv$',
+        views.CallExportView.as_view(), name="calls_csv"),
+    url(r'^(?P<agency_code>[A-Za-z0-9]+)/call_map$', views.MapView.as_view(),
+        name="call_map")
 ]
 
 for module in iterload('urls'):
