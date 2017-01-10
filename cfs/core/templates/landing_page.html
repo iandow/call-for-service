@@ -9,7 +9,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ site_config.department_abbr }} CFS</title>
+    <title>{{ agency.code }} CFS</title>
     <link rel="shortcut icon" href="{% static 'favicon.ico' %}"/>
     <link href='https://fonts.googleapis.com/css?family=Audiowide'
           rel='stylesheet' type='text/css'>
@@ -63,8 +63,9 @@
     <div class="container-fluid">
         <div class="navbar-header">
             <a class="navbar-brand"
-               href="{% url 'call_volume' agency_code=agency.code %}">{{
-                site_config.department_abbr }} CFS</a>
+               href="{% url 'call_volume' agency_code=agency.code %}">
+                {{ agency.code }} CFS
+            </a>
         </div>
         <ul class="nav navbar-nav">
             <li><a href="{% url 'call_volume' agency_code=agency.code %}">Call
@@ -84,7 +85,7 @@
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <h1>{{ site_config.department_abbr }} CFS Analytics</h1>
+                <h1>{{ agency.code }} CFS Analytics</h1>
                 <h2>Turning CFS data into operational and strategic
                     intelligence</h2>
             </div>
@@ -96,7 +97,7 @@
     <div class="container">
         <div class="row">
             <div class="banner-text col-md-12">
-                <h1>{{ site_config.department_abbr }} CFS Analytics</h1>
+                <h1>{{ agency.code }} CFS Analytics</h1>
                 <h2>Turning CFS data into operational and strategic
                     intelligence</h2>
             </div>
@@ -165,7 +166,7 @@
 <div class="container-fluid footer">
     <div class="row">
         <div class="col-md-12">
-            <img src="{% static " img/RTI_logo_blue.gif" %}"
+            <img src="{% static 'img/RTI_logo_blue.gif' %}"
             alt="RTI International">
             Copyright 2016 RTI International.
         </div>

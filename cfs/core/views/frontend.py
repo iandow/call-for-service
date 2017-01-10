@@ -4,7 +4,7 @@ from io import StringIO
 
 from django.conf import settings
 from django.http import StreamingHttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.views.generic import View
 from url_filter.filtersets import StrictMode
 
@@ -37,13 +37,22 @@ def build_filter(filter_set):
     return out
 
 
-class LandingPageView(View):
+class ViewWithAgencies(View):
+
+    def dispatch(self, request, *args, **kwargs):
+        agency_code = kwargs['agency_code']
+        self.agency = get_object_or_404(Agency, code=agency_code)
+        self.agencies = Agency.objects.all().order_by("descr")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class LandingPageView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         agency = Agency.objects.first()
         return render_to_response(
             "landing_page.html",
-            dict(agency=agency,
+            dict(agency=self.agency,
                  show_allocation=(
                      'officer_allocation' in settings.INSTALLED_APPS)))
 
