@@ -57,35 +57,39 @@ class LandingPageView(ViewWithAgencies):
                      'officer_allocation' in settings.INSTALLED_APPS)))
 
 
-class CallListView(View):
+class CallListView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="call_list",
+                                       agency=self.agency,
                                        form=build_filter(CallFilterSet)))
 
 
-class CallVolumeView(View):
+class CallVolumeView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="call_volume",
+                                       agency=self.agency,
                                        form=build_filter(CallFilterSet)))
 
 
-class ResponseTimeView(View):
+class ResponseTimeView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="response_time",
+                                       agency=self.agency,
                                        form=build_filter(CallFilterSet)))
 
 
-class MapView(View):
+class MapView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
                                   dict(asset_chunk="call_map",
+                                       agency=self.agency,
                                        form=build_filter(CallFilterSet)))
 
 
@@ -114,7 +118,7 @@ class CSVIterator:
             yield self.writer.writerow(serializer.data)
 
 
-class CallExportView(View):
+class CallExportView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         qs = Call.objects \

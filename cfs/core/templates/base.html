@@ -13,7 +13,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ site_config.department_abbr }} CFS</title>
+    <title>{{ agency.code }} CFS</title>
     <link rel="shortcut icon" href="{% static 'favicon.ico' %}"/>
     <link href='https://fonts.googleapis.com/css?family=Audiowide'
           rel='stylesheet' type='text/css'>
@@ -42,19 +42,19 @@
     <nav class="navbar navbar-inverse">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="/call_volume[[ filterHash ]]">
-                    {{ site_config.department_abbr }} CFS
+                <a class="navbar-brand" href="{% url 'call_volume' agency_code=agency.code %}[[ filterHash ]]">
+                    {{ agency.code }} CFS
                 </a>
             </div>
             <ul class="nav navbar-nav">
-                <li><a href="/call_volume[[ filterHash ]]">Call Volume</a></li>
-                <li><a href="/response_time[[ filterHash ]]">Response Time</a></li>
-                <li><a href="/calls[[ filterHash ]]">Call List</a></li>
-                <li><a href="/calls.csv?[[ queryParams ]]">Export Calls as
+                <li><a href="{% url 'call_volume' agency_code=agency.code %}[[ filterHash ]]">Call Volume</a></li>
+                <li><a href="{% url 'response_time' agency_code=agency.code %}[[ filterHash ]]">Response Time</a></li>
+                <li><a href="{% url 'calls' agency_code=agency.code %}[[ filterHash ]]">Call List</a></li>
+                <li><a href="{% url 'calls_csv' agency_code=agency.code %}?[[ queryParams ]]">Export Calls as
                     CSV</a>
                 </li>
-                <li><a href="/call_map[[ filterHash ]]">Utilization
-                    <sup><i>beta</i></sup></a>
+                <li><a href="{% url 'call_map' agency_code=agency.code %}[[ filterHash ]]">Utilization
+                    </a>
                 </li>
                 {% hook 'navbar' %}
             </ul>
