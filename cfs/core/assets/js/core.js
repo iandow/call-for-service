@@ -33,9 +33,7 @@ helpers.formatCount = function (number, singular, plural) {
 var NavBar = Ractive.extend({
   template: "#navbar-template",
   delimiters: [ '[[', ']]' ],
-  data: {
-    departmentAbbr: siteConfig.department_abbr
-  }
+  data: {}
 });
 
 var ChartHeader = Ractive.extend({

@@ -25,12 +25,6 @@ from geoposition.fields import GeopositionField
 class SiteConfiguration(SingletonModel):
     maintenance_mode = models.BooleanField(default=False)
 
-    # Department
-    department_name = models.CharField(max_length=255,
-                                       default="City Police Department")
-    department_abbr = models.CharField("Department abbreviation", max_length=10,
-                                       default="CPD")
-
     # Features
     use_shift = models.BooleanField("Use shift?", default=False)
     use_district = models.BooleanField("Use district?", default=False)

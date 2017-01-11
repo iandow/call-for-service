@@ -17,9 +17,6 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
         (None, {
             'fields': ('maintenance_mode',)
         }),
-        ('Department', {
-            'fields': ('department_name', 'department_abbr',),
-        }),
         ('Features', {
             'fields': (
                 'use_shift',
