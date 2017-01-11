@@ -16,7 +16,7 @@ import colorbrewer from "colorbrewer";
 import nv from "nvd3";
 
 
-var url = "/api/response_time/";
+var url = "/api/" + agencyCode + "/response_time/";
 
 function durationFormat(secs) {
     secs = Math.round(secs);

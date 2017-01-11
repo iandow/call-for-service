@@ -42,14 +42,12 @@ class ViewWithAgencies(View):
     def dispatch(self, request, *args, **kwargs):
         agency_code = kwargs['agency_code']
         self.agency = get_object_or_404(Agency, code=agency_code)
-        self.agencies = Agency.objects.all().order_by("descr")
         return super().dispatch(request, *args, **kwargs)
 
 
 class LandingPageView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
-        agency = Agency.objects.first()
         return render_to_response(
             "landing_page.html",
             dict(agency=self.agency,

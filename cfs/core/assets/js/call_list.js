@@ -12,7 +12,7 @@ import moment from "moment";
 
 import "../styles/calls.scss";
 
-var apiURL = "/api/calls/";
+var apiURL = "/api/" + agencyCode + "/calls/";
 
 var Pagination = Ractive.extend({
     template: require("../templates/pagination.html"),

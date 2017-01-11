@@ -30,9 +30,12 @@ class Secs(Extract):
 
 
 class CallOverview:
-    def __init__(self, filters):
+
+    def __init__(self, agency, filters):
         self._filters = filters
-        self.filter = CallFilterSet(data=filters, queryset=Call.objects.all(),
+        self.filter = CallFilterSet(data=filters,
+                                    queryset=Call.objects.filter(
+                                        agency=agency),
                                     strict_mode=StrictMode.fail)
         self.bounds = self.qs.aggregate(min_time=Min('time_received'),
                                         max_time=Max('time_received'))
@@ -84,10 +87,10 @@ class CallOverview:
     def by_shift(self):
         results = self.qs \
             .annotate(id=Case(
-            When(Q(hour_received__gte=6) & Q(
-                hour_received__lt=18), then=0),
-            default=1,
-            output_field=IntegerField())) \
+                When(Q(hour_received__gte=6) & Q(
+                    hour_received__lt=18), then=0),
+                default=1,
+                output_field=IntegerField())) \
             .values("id") \
             .annotate(**self.annotations)
 
@@ -147,7 +150,7 @@ class CallVolumeOverview(CallOverview):
     def volume_by_date(self):
         results = self.qs \
             .annotate(
-            date=DateTrunc('time_received', precision=self.precision())) \
+                date=DateTrunc('time_received', precision=self.precision())) \
             .values("date") \
             .annotate(volume=Count("date")) \
             .order_by("date")
@@ -157,9 +160,9 @@ class CallVolumeOverview(CallOverview):
     def volume_by_source(self):
         results = self.qs \
             .annotate(id=Case(
-            When(call_source__is_self_initiated=True, then=0),
-            default=1,
-            output_field=IntegerField())) \
+                When(call_source__is_self_initiated=True, then=0),
+                default=1,
+                output_field=IntegerField())) \
             .values("id") \
             .annotate(**self.annotations)
 
@@ -255,6 +258,7 @@ class CallResponseTimeOverview(CallOverview):
 
 
 class CallMapOverview(CallOverview):
+
     def locations(self):
         return self.qs.values_list('geoy', 'geox', 'street_address',
                                    'business', 'nature__descr')
@@ -273,4 +277,3 @@ class CallMapOverview(CallOverview):
             'count': self.count(),
             'locations': self.locations()
         }
-

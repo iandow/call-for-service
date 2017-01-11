@@ -16,7 +16,7 @@ import d3 from "d3";
 import colorbrewer from "colorbrewer";
 import nv from "nvd3";
 
-var callVolumeURL = "/api/call_volume/";
+var callVolumeURL = "/api/" + agencyCode + "/call_volume/";
 
 var outFormats = {
     "month": "%b %Y",
@@ -416,4 +416,3 @@ function buildVolumeByDateChart(data) {
 }
 
 monitorChart(dashboard, "data.volume_by_date", buildVolumeByDateChart);
-

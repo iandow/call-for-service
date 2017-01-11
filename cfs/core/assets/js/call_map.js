@@ -21,7 +21,7 @@ var Cluster = require(
 var PruneClusterForLeaflet = Cluster.PruneClusterForLeaflet;
 var PruneCluster = Cluster.PruneCluster;
 
-var url = "/api/call_map/";
+var url = "/api/" + agencyCode + "/call_map/";
 
 var dashboard = new Page({
     el: document.getElementById("dashboard"),

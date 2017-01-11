@@ -8,13 +8,17 @@ from core import views
 from core.plugins import iterload
 
 router = routers.DefaultRouter()
-router.register(r'calls', views.CallViewSet)
+router.register(
+    r'(?P<agency_code>[A-Za-z0-9]+)/calls', views.CallViewSet, base_name="calls")
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^api/call_volume/$', views.APICallVolumeView.as_view()),
-    url(r'^api/response_time/$', views.APICallResponseTimeView.as_view()),
-    url(r'^api/call_map/', views.APICallMapView.as_view()),
+    url(r'^api/(?P<agency_code>[A-Za-z0-9]+)/call_volume/$',
+        views.APICallVolumeView.as_view()),
+    url(r'^api/(?P<agency_code>[A-Za-z0-9]+)/response_time/$',
+        views.APICallResponseTimeView.as_view()),
+    url(r'^api/(?P<agency_code>[A-Za-z0-9]+)/call_map/',
+        views.APICallMapView.as_view()),
     url(r'^api/', include(router.urls)),
     url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^(?P<agency_code>[A-Za-z0-9]+)/$', views.LandingPageView.as_view()),
