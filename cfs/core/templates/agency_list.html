@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% spaceless %}
+{% load staticfiles %}
+{% load hooks_tags %}
+{% load render_bundle from webpack_loader %}
+{% endspaceless %}
+
+{% block stylesheets %}
+{% render_bundle 'landing_page' 'css' %}
+{% endblock %}
+
+{% block javascript %}
+{% render_bundle 'landing_page' 'js' %}
+{% endblock %}
+
+{% block content %}
+<h1>Call for Service Analytics</h1>
+<h2>Choose an agency</h2>
+<ul>
+    {% for agency in agencies %}
+    <li><a href="{% url 'agency' agency_code=agency.code %}">{{ agency.descr }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}

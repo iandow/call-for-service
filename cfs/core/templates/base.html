@@ -22,11 +22,13 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+{% block content_without_container %}
 <div class="container-fluid container-max-1800" id="dashboard">
     {% block content %}
     {% endblock %}
 </div>
 <!-- end container-fluid -->
+{% endblock %}
 
 <div class="container-fluid footer">
     <div class="row">

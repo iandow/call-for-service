@@ -3,8 +3,9 @@ import csv
 from io import StringIO
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.http import StreamingHttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.views.generic import View
 from url_filter.filtersets import StrictMode
 
@@ -37,6 +38,20 @@ def build_filter(filter_set):
     return out
 
 
+class LandingPageView(View):
+
+    def get(self, request):
+        agencies = Agency.objects.all()
+        if len(agencies) == 1:
+            return redirect(
+                reverse('agency', kwargs={"agency_code": agencies[0].code}))
+        else:
+            return render_to_response('agency_list.html',
+                                      {"agencies": agencies,
+                                       "agency": agencies[0]})
+            pass  # render
+
+
 class ViewWithAgencies(View):
 
     def dispatch(self, request, *args, **kwargs):
@@ -45,11 +60,11 @@ class ViewWithAgencies(View):
         return super().dispatch(request, *args, **kwargs)
 
 
-class LandingPageView(ViewWithAgencies):
+class AgencyLandingPageView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response(
-            "landing_page.html",
+            "agency_landing_page.html",
             dict(agency=self.agency,
                  show_allocation=(
                      'officer_allocation' in settings.INSTALLED_APPS)))
