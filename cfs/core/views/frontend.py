@@ -57,7 +57,15 @@ class ViewWithAgencies(View):
     def dispatch(self, request, *args, **kwargs):
         agency_code = kwargs['agency_code']
         self.agency = get_object_or_404(Agency, code=agency_code)
+        self.agencies = Agency.objects.all()
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context(self, **kwargs):
+        return {
+            'agency': self.agency,
+            'agencies': self.agencies,
+            **kwargs
+        }
 
 
 class AgencyLandingPageView(ViewWithAgencies):
@@ -65,45 +73,45 @@ class AgencyLandingPageView(ViewWithAgencies):
     def get(self, request, *args, **kwargs):
         return render_to_response(
             "agency_landing_page.html",
-            dict(agency=self.agency,
-                 show_allocation=(
-                     'officer_allocation' in settings.INSTALLED_APPS)))
+            self.get_context(
+                show_allocation=(
+                    'officer_allocation' in settings.INSTALLED_APPS)))
 
 
 class CallListView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="call_list",
-                                       agency=self.agency,
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="call_list",
+                                      form=build_filter(CallFilterSet)))
 
 
 class CallVolumeView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="call_volume",
-                                       agency=self.agency,
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="call_volume",
+                                      form=build_filter(CallFilterSet)))
 
 
 class ResponseTimeView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="response_time",
-                                       agency=self.agency,
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="response_time",
+                                      form=build_filter(CallFilterSet)))
 
 
 class MapView(ViewWithAgencies):
 
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="call_map",
-                                       agency=self.agency,
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="call_map",
+                                      form=build_filter(CallFilterSet)))
 
 
 class Echo(object):
