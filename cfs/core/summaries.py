@@ -32,10 +32,11 @@ class Secs(Extract):
 class CallOverview:
 
     def __init__(self, agency, filters):
+        self.agency = agency
         self._filters = filters
         self.filter = CallFilterSet(data=filters,
                                     queryset=Call.objects.filter(
-                                        agency=agency),
+                                        agency=self.agency),
                                     strict_mode=StrictMode.fail)
         self.bounds = self.qs.aggregate(min_time=Min('time_received'),
                                         max_time=Max('time_received'))
@@ -74,7 +75,9 @@ class CallOverview:
         return dict(Beat.objects.all().values_list('descr', 'beat_id'))
 
     def district_ids(self):
-        return dict(District.objects.all().values_list('descr', 'district_id'))
+        return dict(
+            District.objects.filter(agency=self.agency).values_list('descr',
+                                                                    'district_id'))
 
     def by_dow(self):
         results = self.qs \

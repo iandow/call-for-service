@@ -185,8 +185,9 @@ class Command(BaseCommand):
         df = self.df
 
         district_names = safe_sorted(df['District'].unique())
-        districts = [District.objects.get_or_create(descr=name)[0]
-                     for name in district_names]
+        districts = [
+            District.objects.get_or_create(agency=self.agency, descr=name)[0]
+            for name in district_names]
         district_map = {d.descr: d.district_id for d in districts}
         df['District ID'] = df['District'].apply(lambda x: district_map.get(x),
                                                  convert_dtype=False)

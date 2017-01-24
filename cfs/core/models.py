@@ -12,6 +12,7 @@
 # into your database.
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
@@ -247,6 +248,19 @@ class Call(models.Model):
         else:
             self.officer_response_time = self.overall_response_time
 
+    def save(self, *args, **kwargs):
+        self.update_derived_fields()
+
+        if self.district and self.district.agency != self.agency:
+            raise ValidationError(
+                {"agency": "Agency must match district agency."})
+
+        if self.sector and self.sector.agency != self.agency:
+            raise ValidationError(
+                {"agency": "Agency must match sector agency."})
+
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = 'call'
         index_together = [
@@ -304,12 +318,29 @@ class CloseCode(ModelWithCodeAndDescr):
         db_table = 'close_code'
 
 
-class District(ModelWithDescr):
+class District(models.Model):
     district_id = models.AutoField(primary_key=True)
+    agency = models.ForeignKey('Agency')
     sector = models.ForeignKey('Sector', blank=True, null=True)
+    descr = models.TextField("Description")
+
+    def save(self, *args, **kwargs):
+        if self.sector and self.sector.agency != self.agency:
+            raise ValidationError(
+                {"agency": "Agency and sector agency must match."})
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        if self.descr:
+            return self.descr
+        else:
+            return super().__str__()
 
     class Meta:
+        ordering = ['descr']
         db_table = 'district'
+        unique_together = ("agency", "descr",)
 
 
 class Division(ModelWithDescr):
@@ -320,11 +351,21 @@ class Division(ModelWithDescr):
         db_table = 'division'
 
 
-class Sector(ModelWithDescr):
+class Sector(models.Model):
     sector_id = models.AutoField(primary_key=True)
+    agency = models.ForeignKey('Agency')
+    descr = models.TextField("Description")
+
+    def __str__(self):
+        if self.descr:
+            return self.descr
+        else:
+            return super().__str__()
 
     class Meta:
+        ordering = ['descr']
         db_table = 'sector'
+        unique_together = ("agency", "descr",)
 
 
 class Nature(ModelWithDescr):
