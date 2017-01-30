@@ -117,7 +117,6 @@ class Agency(models.Model):
 class Beat(ModelWithDescr):
     beat_id = models.AutoField(primary_key=True)
     district = models.ForeignKey('District', blank=True, null=True)
-    sector = models.ForeignKey('Sector', blank=True, null=True)
 
     class Meta:
         db_table = 'beat'
@@ -175,10 +174,8 @@ class CallQuerySet(models.QuerySet):
 class Call(models.Model):
     objects = CallQuerySet.as_manager()
 
-    # Ideally, agency should not ever be null, but since we're adding
-    # it at this point, it can be. It is possible we will leave it
-    # nullable and have the case of a 1-agency install not use the
-    # agencies table.
+    # Ideally, agency should not ever be null, but since we added it later,
+    # it is a possibility.
     agency = models.ForeignKey('Agency', blank=True, null=True)
     call_id = models.CharField(max_length=64, primary_key=True)
     time_received = DateTimeNoTZField(db_index=True)
@@ -206,7 +203,6 @@ class Call(models.Model):
     geoy = models.FloatField(blank=True, null=True)
     beat = models.ForeignKey(Beat, blank=True, null=True)
     district = models.ForeignKey('District', blank=True, null=True)
-    sector = models.ForeignKey('Sector', blank=True, null=True)
     business = models.TextField(blank=True, null=True)
     nature = models.ForeignKey('Nature', blank=True, null=True)
     priority = models.ForeignKey('Priority', blank=True, null=True)
@@ -254,10 +250,6 @@ class Call(models.Model):
         if self.district and self.district.agency != self.agency:
             raise ValidationError(
                 {"agency": "Agency must match district agency."})
-
-        if self.sector and self.sector.agency != self.agency:
-            raise ValidationError(
-                {"agency": "Agency must match sector agency."})
 
         super().save(*args, **kwargs)
 
@@ -321,15 +313,7 @@ class CloseCode(ModelWithCodeAndDescr):
 class District(models.Model):
     district_id = models.AutoField(primary_key=True)
     agency = models.ForeignKey('Agency')
-    sector = models.ForeignKey('Sector', blank=True, null=True)
     descr = models.TextField("Description")
-
-    def save(self, *args, **kwargs):
-        if self.sector and self.sector.agency != self.agency:
-            raise ValidationError(
-                {"agency": "Agency and sector agency must match."})
-
-        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.descr:
@@ -349,23 +333,6 @@ class Division(ModelWithDescr):
 
     class Meta:
         db_table = 'division'
-
-
-class Sector(models.Model):
-    sector_id = models.AutoField(primary_key=True)
-    agency = models.ForeignKey('Agency')
-    descr = models.TextField("Description")
-
-    def __str__(self):
-        if self.descr:
-            return self.descr
-        else:
-            return super().__str__()
-
-    class Meta:
-        ordering = ['descr']
-        db_table = 'sector'
-        unique_together = ("agency", "descr",)
 
 
 class Nature(ModelWithDescr):

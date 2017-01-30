@@ -110,6 +110,7 @@ def unique_clean_values(column):
 
 
 class ETL:
+
     def __init__(self, dir, reset=False, subsample=None, batch_size=2000):
         self.dir = dir
         self.subsample = subsample
@@ -129,9 +130,6 @@ class ETL:
         self.mapping['City'] = self.create_from_calls(column="citydesc",
                                                       model=City,
                                                       to_field="city_id")
-        self.mapping['Sector'] = self.create_from_calls(column="ra",
-                                                        model=Sector,
-                                                        to_field="sector_id")
         self.mapping['District'] = self.create_from_calls(column="district",
                                                           model=District,
                                                           to_field="district_id")
@@ -186,7 +184,7 @@ class ETL:
             to_field="oos_code_id"
         )
         self.mapping['NoteAuthor'] = self.create_note_authors()
-        self.connect_beats_districts_sectors()
+        self.connect_beats_districts()
         self.create_calls()
         self.calls = None
 
@@ -251,7 +249,7 @@ class ETL:
     def exclude_existing(self, df, model, data_key_col, db_key_col):
         existing_ids = self.get_key_set(model, db_key_col)
         return df[df.apply(lambda x: x[data_key_col] not in existing_ids, axis=1)]
-        
+
     def create_from_calls(self, column, model, to_field, from_field='descr'):
         self.log("Creating {} data from calls...".format(model.__name__))
         xs = unique_clean_values(self.calls[column])
@@ -262,7 +260,8 @@ class ETL:
 
     def create_from_lookup(self, model, filename, mapping, code_column,
                            to_field, from_field='code'):
-        self.log("Creating {} data from {}...".format(model.__name__, filename))
+        self.log("Creating {} data from {}...".format(
+            model.__name__, filename))
         model_data = {}
 
         if filename.endswith(".csv"):
@@ -304,7 +303,8 @@ class ETL:
         unitset = {unit.strip() for unit in values if
                    unit and not isnan(unit) and unit.strip()}
         units_to_create = unitset - current_unit_descrs
-        CallUnit.objects.bulk_create(CallUnit(descr=unit) for unit in units_to_create)
+        CallUnit.objects.bulk_create(CallUnit(descr=unit)
+                                     for unit in units_to_create)
         return dict(CallUnit.objects.values_list('descr', 'call_unit_id'))
 
     def create_note_authors(self):
@@ -350,7 +350,6 @@ class ETL:
                                 geoy=safe_float(c.geoy),
                                 beat_id=self.map('Beat', c.statbeat),
                                 district_id=self.map('District', c.district),
-                                sector_id=self.map('Sector', c.ra),
                                 business=c.business,
                                 nature_id=self.map('Nature', c.nature),
                                 priority_id=self.map('Priority', c.priority),
@@ -387,11 +386,11 @@ class ETL:
                 self.log("Call {}-{} created".format(start, start + len(batch)))
                 start += self.batch_size
         except ValueError as ex:
-            import pdb;
+            import pdb
             pdb.set_trace()
 
-    def connect_beats_districts_sectors(self):
-        self.log("Connecting beats to districts and sectors...")
+    def connect_beats_districts(self):
+        self.log("Connecting beats to districts...")
 
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -402,46 +401,6 @@ class ETL:
                   WHERE district.descr = 'D' || SUBSTRING(beat.descr::text FROM 1 FOR 1)
                 )
                 WHERE beat.descr NOT IN ('DSO', 'OOJ');
-            """)
-            cursor.execute("""
-                UPDATE beat
-                SET sector_id = (
-                  SELECT sector_id
-                  FROM sector
-                  WHERE sector.descr = 'NTH')
-                WHERE beat.district_id IN (
-                  SELECT district_id
-                  FROM district
-                  WHERE district.descr IN ('D2', 'D1', 'D5')
-                );
-            """)
-            cursor.execute("""
-                UPDATE beat
-                SET sector_id = (
-                  SELECT sector_id
-                  FROM sector
-                  WHERE sector.descr = 'STH')
-                WHERE beat.district_id IN (
-                  SELECT district_id
-                  FROM district
-                  WHERE district.descr IN ('D3', 'D4')
-                );
-            """)
-            cursor.execute("""
-                UPDATE district
-                SET sector_id = (
-                SELECT sector_id
-                  FROM sector
-                  WHERE sector.descr = 'STH')
-                WHERE district.descr IN ('D3', 'D4');
-            """)
-            cursor.execute("""
-                UPDATE district
-                SET sector_id = (
-                SELECT sector_id
-                  FROM sector
-                  WHERE sector.descr = 'NTH')
-                WHERE district.descr IN ('D2', 'D1', 'D5');
             """)
 
     def connect_call_unit_squads(self):
@@ -463,7 +422,7 @@ class ETL:
 
         Squad.objects.bulk_create(
             Squad(descr=s) for s in call_unit_squad_regexes.keys()
-              if s not in existing_squads)
+            if s not in existing_squads)
         self.mapping['Squad'] = dict(
             Squad.objects.values_list('descr', 'squad_id'))
 
@@ -527,8 +486,8 @@ class ETL:
             # Keep track of all names of new officers
             elif id not in officers:
                 if ('name' in officers[id] or name.isdigit()) and \
-                        name and name not in officers[id]['name_aka'] and \
-                                name != officers[id]['name']:
+                    name and name not in officers[id]['name_aka'] and \
+                        name != officers[id]['name']:
                     officers[id]['name_aka'].append(name)
                 elif not ('name' in officers[id] or name.isdigit()):
                     officers[id]['name'] = name
@@ -566,7 +525,7 @@ class ETL:
                     "ShiftUnit {}-{} created".format(start, start + len(batch)))
                 start += self.batch_size
         except ValueError as ex:
-            import pdb;
+            import pdb
             pdb.set_trace()
 
     def create_out_of_service(self):
@@ -575,7 +534,7 @@ class ETL:
         strip_dataframe(df)
 
         df = self.exclude_existing(df, OutOfServicePeriod, 'outservid',
-                'oos_id')
+                                   'oos_id')
 
         start = 0
         while start < len(df):
@@ -640,10 +599,10 @@ class ETL:
         grouped = trans_data.groupby("transtype")
         for code, row in grouped.first().iterrows():
             transactions[code] = row.descript
-        
+
         existing_codes = self.get_key_set(Transaction, 'code')
-        transactions = {code: descr for code, descr in transactions.items() \
-                if code not in existing_codes}
+        transactions = {code: descr for code, descr in transactions.items()
+                        if code not in existing_codes}
 
         Transaction.objects.bulk_create(
             Transaction(code=code, descr=descr) for code, descr in
@@ -668,7 +627,8 @@ class ETL:
                                                              s.transtype),
                                      time_recorded=safe_datetime(s.timestamp),
                                      call_id=safe_int(s.inci_id),
-                                     call_unit_id=self.map('CallUnit', s.unitcode),
+                                     call_unit_id=self.map(
+                                         'CallUnit', s.unitcode),
                                      shift_id=self.map('Shift', s.unitperid),
                                      close_code_id=self.map('CloseCode',
                                                             s.closecode))
@@ -679,7 +639,7 @@ class ETL:
                     "CallLog {}-{} created".format(start, start + len(batch)))
                 start += self.batch_size
         except ValueError as ex:
-            import pdb;
+            import pdb
             pdb.set_trace()
 
     def create_nature_groups(self):
@@ -715,5 +675,5 @@ class ETL:
         existing_types = self.get_key_set(OfficerActivityType, 'descr')
         types = [t for t in types if t not in existing_types]
 
-        OfficerActivityType.objects.bulk_create(OfficerActivityType(descr=t) for t in types)
-
+        OfficerActivityType.objects.bulk_create(
+            OfficerActivityType(descr=t) for t in types)

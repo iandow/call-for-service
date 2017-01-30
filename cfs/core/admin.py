@@ -47,7 +47,6 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
 class BeatInline(admin.TabularInline):
     model = Beat
     extra = 0
-    exclude = ('sector',)
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
@@ -134,7 +133,6 @@ class CloseCodeAdmin(admin.ModelAdmin):
 
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    exclude = ('sector',)
     inlines = [BeatInline, CallUnitInline]
     formfield_overrides = {
         models.TextField: {'widget': TextInput(attrs={'size': '50'})}
