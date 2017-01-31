@@ -3,7 +3,8 @@ from django.forms import TextInput
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 from adminsortable.admin import SortableAdmin
-from .models import Agency, Beat, Bureau, CallSource, CallUnit, City, CloseCode, \
+from .models import Agency, Beat, Bureau, CallSource, CallUnit, City, \
+    CloseCode, \
     District, Division, Nature, NatureGroup, \
     Officer, \
     Priority, Shift, ShiftUnit, SiteConfiguration, Squad, \
@@ -79,6 +80,23 @@ class ShiftUnitInline(admin.TabularInline):
 @admin.register(Agency)
 class AgencyAdmin(admin.ModelAdmin):
     list_display = ('descr', 'code',)
+
+    fieldsets = (
+        (None, {
+            'fields': ('code', 'descr',)
+        }),
+        ('Geography', {
+            'description': "These fields are optional. They override the same "
+                           "settings in the site configuration.",
+            'fields': (
+                'geo_center',
+                'geo_ne_bound',
+                'geo_sw_bound',
+                'geo_default_zoom',
+                'geojson_url',
+            )
+        })
+    )
 
 
 @admin.register(Beat)

@@ -109,6 +109,14 @@ class Agency(models.Model):
                                 RegexValidator(regex=r'^[A-Za-z0-9]+$')])
     descr = models.CharField("Description", max_length=255)
 
+    # Geography
+    geo_center = GeopositionField("Center", blank=True)
+    geo_ne_bound = GeopositionField("Northeast bound", blank=True)
+    geo_sw_bound = GeopositionField("Southwest bound", blank=True)
+    geo_default_zoom = models.PositiveIntegerField(
+        "Default zoom level", default=11)
+    geojson_url = models.CharField(max_length=255, blank=True, null=True)
+
     class Meta:
         verbose_name_plural = 'agencies'
         db_table = 'agency'
