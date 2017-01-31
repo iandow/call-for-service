@@ -12,7 +12,7 @@ import moment from "moment";
 
 import "../styles/calls.scss";
 
-var apiURL = "/api/" + agencyCode + "/calls/";
+var apiURL = "/api/" + AGENCY.code + "/calls/";
 
 var Pagination = Ractive.extend({
     template: require("../templates/pagination.html"),
@@ -64,7 +64,7 @@ var callList = new Page({
         page: 1,
         perPage: 50,
         calls: {},
-        config: siteConfig
+        config: SITE_CONFIG
     },
     computed: {
         topCount: function () {

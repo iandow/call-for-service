@@ -15,7 +15,7 @@ import d3 from "d3";
 import moment from "moment";
 import nv from "nvd3";
 
-var url = "/api/" + agencyCode + "/officer_allocation/";
+var url = "/api/" + AGENCY.code + "/officer_allocation/";
 
 var OfficerAllocationFilter = Filter.extend({
   template: require("../templates/officer_allocation_filter.html")

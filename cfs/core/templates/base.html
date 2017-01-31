@@ -101,9 +101,16 @@
 
 <!-- Latest compiled and minified JavaScript -->
 <script>
-    var filterForm = {{ form|jsonify }};
-    var siteConfig = {{ site_config|model_to_dict|jsonify }};
-    var agencyCode = {{ agency.code|jsonify }};
+    var FILTER_FORM = {{ form|jsonify }};
+    var SITE_CONFIG = {{ site_config|model_to_dict|jsonify }};
+    var AGENCY = {{ agency|model_to_dict|jsonify }};
+    var MAP_INFO = {
+        geojsonURL: AGENCY.geojson_url || SITE_CONFIG.geojson_url,
+        neBound: AGENCY.geo_ne_bound || SITE_CONFIG.geo_ne_bound,
+        swBound: AGENCY.geo_sw_bound || SITE_CONFIG.geo_sw_bound,
+        center: AGENCY.geo_center || SITE_CONFIG.geo_center,
+        zoom: AGENCY.geo_default_zoom || SITE_CONFIG.geo_default_zoom
+    }
 </script>
 {% render_bundle 'commons' 'js' %}
 {% block javascript %}{% endblock %}

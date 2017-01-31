@@ -148,7 +148,7 @@ export var Filter = Ractive.extend({
         if (field.rel !== undefined) {
           return {
             type: "select",
-            options: filterForm.refs[field.rel]
+            options: FILTER_FORM.refs[field.rel]
           };
         } else if (field.type === "select") {
           return {
@@ -170,7 +170,7 @@ export var Filter = Ractive.extend({
       },
       filterValue: filterValue,
       displayValue: displayValue,
-      config: siteConfig
+      config: SITE_CONFIG
     };
   },
   computed: {
@@ -178,7 +178,7 @@ export var Filter = Ractive.extend({
       return "#!" + buildQueryParams(this.get("filter"));
     },
     fields: function() {
-      return filterForm.fields;
+      return FILTER_FORM.fields;
     }
   },
   oninit: function() {
@@ -256,7 +256,7 @@ function getLastSunday() {
 }
 
 function findField(fieldName) {
-  return _(filterForm.fields).find(function(field) {
+  return _(FILTER_FORM.fields).find(function(field) {
     return field.name == fieldName;
   });
 }
@@ -294,7 +294,7 @@ function displayValue(fieldName, value) {
   var choiceMap;
 
   if (field.rel) {
-    choiceMap = arrayToObj(filterForm.refs[field.rel]);
+    choiceMap = arrayToObj(FILTER_FORM.refs[field.rel]);
     dValue = choiceMap[value];
   } else if (field.options) {
     choiceMap = arrayToObj(field.options);
