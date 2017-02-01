@@ -14,6 +14,9 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             """
             CREATE INDEX call_log_call_id_ndx ON call_log (call_id)
+            """,
+            """
+            DROP INDEX call_log_call_id_ndx;
             """
         ),
     ]
