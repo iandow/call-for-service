@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from core.models import (CallLog, Transaction, CallUnit, ShiftUnit, Shift,
-                         update_materialized_views)
+                         Agency, update_materialized_views)
 from officer_allocation.models import (OfficerActivityType)
 
 def isnan(x):
@@ -27,6 +27,10 @@ class Command(BaseCommand):
                             help='The file containing the call log data.')
         parser.add_argument('--shift-file', type=str, required=True,
                             help='The file containing the shift data.')
+        parser.add_argument('--agency', type=str,
+                            help="The code for the agency the officer allocation data "
+                            "belongs to.  Without this option, it will be assigned to the"
+                            "first agency found.")
 
     def log(self, message):
         if self.start_time:
@@ -38,6 +42,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.start_time = dt.datetime.now()
+
+        if options['agency']:
+            self.agency = Agency.objects.get(code=options['agency'])
+        else:
+            self.agency = Agency.objects.first()
+            self.log("Using default agency: " + self.agency.code)
 
         self.batch_size = 2000
         self.log("Loading call log CSV")
@@ -84,7 +94,7 @@ class Command(BaseCommand):
         unit_series = pd.concat([self.call_log['Unit'], self.shifts['Unit']])
 
         unit_names = safe_sorted(unit_series.unique())
-        units = [CallUnit.objects.get_or_create(descr=name)[0]
+        units = [CallUnit.objects.get_or_create(descr=name, agency=self.agency)[0]
                  for name in unit_names]
         unit_map = {u.descr: u.call_unit_id for u in units}
         self.call_log['Unit ID'] = self.call_log['Unit'].apply(lambda x: unit_map.get(x),
