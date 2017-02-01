@@ -61,11 +61,12 @@ class ViewWithAgencies(View):
         return super().dispatch(request, *args, **kwargs)
 
     def get_context(self, **kwargs):
-        return {
+        context = kwargs.copy()
+        context.update({
             'agency': self.agency,
-            'agencies': self.agencies,
-            **kwargs
-        }
+            'agencies': self.agencies
+        })
+        return context
 
 
 class AgencyLandingPageView(ViewWithAgencies):
