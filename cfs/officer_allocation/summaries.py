@@ -14,7 +14,7 @@ class OfficerActivityOverview:
         self._filters = filters
         self.filter = OfficerActivityFilterSet(
             data=filters,
-            queryset=OfficerActivity.objects.filter(call__agency=agency))
+            queryset=OfficerActivity.objects.filter(call_unit__agency=agency))
         self.bounds = self.qs.aggregate(min_time=Min('time'),
                                         max_time=Max('time'))
 

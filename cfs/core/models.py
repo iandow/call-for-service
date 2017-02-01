@@ -77,6 +77,7 @@ def update_materialized_view_dependencies(view):
     updated_views.add(view)
     return updated_views
 
+
 def update_materialized_views():
     updated_views = set()
 
@@ -309,6 +310,7 @@ class CallSource(ModelWithDescr):
 
 class CallUnit(ModelWithDescr):
     call_unit_id = models.AutoField(primary_key=True)
+    agency = models.ForeignKey('Agency')
     squad = models.ForeignKey('Squad', blank=True, null=True,
                               related_name="squad")
     beat = models.ForeignKey("Beat", blank=True, null=True, related_name="+")
