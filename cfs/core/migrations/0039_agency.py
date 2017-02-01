@@ -4,6 +4,21 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 
 
+def forwards_func(apps, schema_editor):
+    """Create an initial agency."""
+    Agency = apps.get_model("core", "Agency")
+    SiteConfiguration = apps.get_model("core", "SiteConfiguration")
+    config = SiteConfiguration.objects.get()
+    agency = Agency()
+    if config.department_abbr and config.department_name:
+        agency.code = config.department_abbr
+        agency.descr = config.department_name
+    else:
+        agency.code = "CPD"
+        agency.descr = "City Police Department"
+    agency.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -23,4 +38,5 @@ class Migration(migrations.Migration):
                 'db_table': 'agency',
             },
         ),
+        migrations.RunPython(forwards_func, migrations.RunPython.noop)
     ]

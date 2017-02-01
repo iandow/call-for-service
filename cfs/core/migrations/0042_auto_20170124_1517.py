@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.apps import apps
 from django.db import migrations, models
+
+
+def set_agency_defaults(apps, schema_editor):
+    Agency = apps.get_model('core', 'Agency')
+    District = apps.get_model('core', 'District')
+    Sector = apps.get_model('core', 'Sector')
+
+    agency = Agency.objects.first()
+    District.objects.update(agency=agency)
+    Sector.objects.update(agency=agency)
 
 
 class Migration(migrations.Migration):
@@ -22,14 +33,23 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='district',
             name='agency',
-            field=models.ForeignKey(to='core.Agency', default=1),
-            preserve_default=False,
+            field=models.ForeignKey(to='core.Agency', null=True),
         ),
         migrations.AddField(
             model_name='sector',
             name='agency',
-            field=models.ForeignKey(to='core.Agency', default=1),
-            preserve_default=False,
+            field=models.ForeignKey(to='core.Agency', null=True),
+        ),
+        migrations.RunPython(set_agency_defaults, migrations.RunPython.noop),
+        migrations.AlterField(
+            model_name='district',
+            name='agency',
+            field=models.ForeignKey(to='core.Agency'),
+        ),
+        migrations.AlterField(
+            model_name='sector',
+            name='agency',
+            field=models.ForeignKey(to='core.Agency'),
         ),
         migrations.AlterField(
             model_name='district',
