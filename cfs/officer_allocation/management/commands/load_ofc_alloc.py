@@ -31,6 +31,12 @@ class Command(BaseCommand):
                             help="The code for the agency the officer allocation data "
                             "belongs to.  Without this option, it will be assigned to the"
                             "first agency found.")
+        parser.add_argument('--skip-view-refresh', action='store_true',
+                            help="If given, don't refresh materialized views.  The refresh "
+                            "takes a fair bit of time depending on how much data is in the "
+                            "database, but it's necessary to see new data reflected in the "
+                            "officer allocation view.  Use this if you're loading multiple "
+                            "sets of data in a row.")
 
     def log(self, message):
         if self.start_time:
@@ -72,8 +78,9 @@ class Command(BaseCommand):
 
         self.create_officer_activity_types()
 
-        self.log("Updating materialized views")
-        update_materialized_views()
+        if not options['skip_view_refresh']:
+            self.log("Updating materialized views")
+            update_materialized_views()
 
     def create_transactions(self):
         self.log("Creating transactions")
