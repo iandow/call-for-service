@@ -9,11 +9,12 @@ from officer_allocation.models import OfficerActivity, OfficerActivityType
 
 
 class OfficerActivityOverview:
-    def __init__(self, filters):
+
+    def __init__(self, agency, filters):
         self._filters = filters
         self.filter = OfficerActivityFilterSet(
             data=filters,
-            queryset=OfficerActivity.objects.all())
+            queryset=OfficerActivity.objects.filter(call_unit__agency=agency))
         self.bounds = self.qs.aggregate(min_time=Min('time'),
                                         max_time=Max('time'))
 
@@ -233,4 +234,4 @@ def dictfetchall(cursor):
     return [
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
-        ]
+    ]

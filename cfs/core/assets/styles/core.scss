@@ -50,6 +50,10 @@ $black: #000000;
   text-align: center;
 }
 
+.navbar {
+  @include border-radius(0 4px);
+}
+
 .navbar-brand {
   font-family: 'Audiowide', sans-serif;
 }

@@ -2,7 +2,8 @@
 
 CFS Analytics must be configured before use. To configure the application,
 go to http://localhost:8000/admin/ (or the admin URL for wherever you have
-CFS Analytics installed) and click "Site Configuration".
+CFS Analytics installed) and click "Site Configuration". You will also have to
+add agency information under "Agencies".
 
 ![admin page showing site configuration](config.png)
 
@@ -40,6 +41,17 @@ The default zoom level is how zoomed into the region your map should start. In
 general, this should be 11 for a town or small city and 10 for a larger city.
 
 Finally, the "geojson URL" is the location of a [GeoJSON](https://en.wikipedia.org/wiki/GeoJSON)
-file describing your town or city's police districts and/or beats. The 
+file describing your town or city's police districts and/or beats. The
 properties for each feature in your GeoJSON must have a "district" or "beat" key
-in order to be displayed. 
+in order to be displayed.
+
+## Agencies
+
+One or more agencies must be added to the database for CFS Analytics will work.
+Each agency must have a _code_ -- a short set of letters and numbers to designate
+that agency. As an example, "DPD" would be a good code for "Durham Police
+Department." Each agency must also have a description -- this is the department
+name.
+
+Agencies can have geographical information if they wish to override the
+geographic info in the site configuration.

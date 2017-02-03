@@ -2,13 +2,18 @@
 # You'll have to do the following manually to clean this up:
 #   * Rearrange models' order
 #   * Make sure each model has one field with primary_key=True
-#   * Remove `` lines if you wish to allow Django to create, modify, and delete the table
-# Feel free to rename the models, but don't rename db_table values or field names.
+#   * Remove `` lines if you wish to allow Django to create, modify,
+# and delete the table
+# Feel free to rename the models, but don't rename db_table values or field
+# names.
 #
-# Also note: You'll have to insert the output of 'django-admin sqlcustom [app_label]'
+# Also note: You'll have to insert the output of 'django-admin sqlcustom [
+# app_label]'
 # into your database.
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 from pg.view import MaterializedView
@@ -20,12 +25,6 @@ from geoposition.fields import GeopositionField
 
 class SiteConfiguration(SingletonModel):
     maintenance_mode = models.BooleanField(default=False)
-
-    # Department
-    department_name = models.CharField(max_length=255,
-                                       default="City Police Department")
-    department_abbr = models.CharField("Department abbreviation", max_length=10,
-                                       default="CPD")
 
     # Features
     use_shift = models.BooleanField("Use shift?", default=False)
@@ -42,7 +41,8 @@ class SiteConfiguration(SingletonModel):
     geo_center = GeopositionField("Center", blank=True)
     geo_ne_bound = GeopositionField("Northeast bound", blank=True)
     geo_sw_bound = GeopositionField("Southwest bound", blank=True)
-    geo_default_zoom = models.PositiveIntegerField("Default zoom level", default=11)
+    geo_default_zoom = models.PositiveIntegerField(
+        "Default zoom level", default=11)
     geojson_url = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
@@ -77,6 +77,7 @@ def update_materialized_view_dependencies(view):
     updated_views.add(view)
     return updated_views
 
+
 def update_materialized_views():
     updated_views = set()
 
@@ -99,6 +100,7 @@ class ModelWithDescr(models.Model):
         abstract = True
         ordering = ['descr']
 
+
 class ModelWithCodeAndDescr(models.Model):
     code = models.CharField("Unique code", max_length=64, unique=True)
     descr = models.CharField("Description", max_length=255)
@@ -114,10 +116,33 @@ class ModelWithCodeAndDescr(models.Model):
         ordering = ['descr']
 
 
+class Agency(models.Model):
+    """
+    The city or district agency under which calls fall.
+    Must have a unique code (letters and numbers only) for use in the URL.
+    """
+    agency_id = models.AutoField(primary_key=True)
+    code = models.CharField("Unique code", max_length=64, unique=True,
+                            validators=[
+                                RegexValidator(regex=r'^[A-Za-z0-9]+$')])
+    descr = models.CharField("Description", max_length=255)
+
+    # Geography
+    geo_center = GeopositionField("Center", blank=True)
+    geo_ne_bound = GeopositionField("Northeast bound", blank=True)
+    geo_sw_bound = GeopositionField("Southwest bound", blank=True)
+    geo_default_zoom = models.PositiveIntegerField(
+        "Default zoom level", default=11)
+    geojson_url = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'agencies'
+        db_table = 'agency'
+
+
 class Beat(ModelWithDescr):
     beat_id = models.AutoField(primary_key=True)
     district = models.ForeignKey('District', blank=True, null=True)
-    sector = models.ForeignKey('Sector', blank=True, null=True)
 
     class Meta:
         db_table = 'beat'
@@ -132,6 +157,7 @@ class Bureau(ModelWithDescr):
 
 
 class CallQuerySet(models.QuerySet):
+
     def squad(self, value):
         if value:
             query = Q(primary_unit__squad_id=value) | Q(
@@ -174,6 +200,9 @@ class CallQuerySet(models.QuerySet):
 class Call(models.Model):
     objects = CallQuerySet.as_manager()
 
+    # Ideally, agency should not ever be null, but since we added it later,
+    # it is a possibility.
+    agency = models.ForeignKey('Agency', blank=True, null=True)
     call_id = models.CharField(max_length=64, primary_key=True)
     time_received = DateTimeNoTZField(db_index=True)
     time_routed = DateTimeNoTZField(blank=True, null=True)
@@ -200,7 +229,6 @@ class Call(models.Model):
     geoy = models.FloatField(blank=True, null=True)
     beat = models.ForeignKey(Beat, blank=True, null=True)
     district = models.ForeignKey('District', blank=True, null=True)
-    sector = models.ForeignKey('Sector', blank=True, null=True)
     business = models.TextField(blank=True, null=True)
     nature = models.ForeignKey('Nature', blank=True, null=True)
     priority = models.ForeignKey('Priority', blank=True, null=True)
@@ -226,17 +254,30 @@ class Call(models.Model):
             self.time_received.isocalendar()
         self.dow_received = self.time_received.weekday()
 
-        if self.first_unit_arrive is not None and self.time_received is not None:
-            self.overall_response_time = self.first_unit_arrive - self.time_received
+        if self.first_unit_arrive is not None and self.time_received is not \
+                None:
+            self.overall_response_time = self.first_unit_arrive - \
+                self.time_received
 
             if self.overall_response_time < timedelta(0):
                 self.overall_response_time = None
 
-        if self.first_unit_arrive is not None and self.first_unit_dispatch is not None\
+        if self.first_unit_arrive is not None and self.first_unit_dispatch is \
+                not None \
                 and self.first_unit_arrive >= self.first_unit_dispatch:
-            self.officer_response_time = self.first_unit_arrive - self.first_unit_dispatch
+            self.officer_response_time = self.first_unit_arrive - \
+                self.first_unit_dispatch
         else:
             self.officer_response_time = self.overall_response_time
+
+    def save(self, *args, **kwargs):
+        self.update_derived_fields()
+
+        if self.district and self.district.agency != self.agency:
+            raise ValidationError(
+                {"agency": "Agency must match district agency."})
+
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'call'
@@ -269,6 +310,7 @@ class CallSource(ModelWithDescr):
 
 class CallUnit(ModelWithDescr):
     call_unit_id = models.AutoField(primary_key=True)
+    agency = models.ForeignKey('Agency')
     squad = models.ForeignKey('Squad', blank=True, null=True,
                               related_name="squad")
     beat = models.ForeignKey("Beat", blank=True, null=True, related_name="+")
@@ -295,12 +337,21 @@ class CloseCode(ModelWithCodeAndDescr):
         db_table = 'close_code'
 
 
-class District(ModelWithDescr):
+class District(models.Model):
     district_id = models.AutoField(primary_key=True)
-    sector = models.ForeignKey('Sector', blank=True, null=True)
+    agency = models.ForeignKey('Agency')
+    descr = models.TextField("Description")
+
+    def __str__(self):
+        if self.descr:
+            return self.descr
+        else:
+            return super().__str__()
 
     class Meta:
+        ordering = ['descr']
         db_table = 'district'
+        unique_together = ("agency", "descr",)
 
 
 class Division(ModelWithDescr):
@@ -309,13 +360,6 @@ class Division(ModelWithDescr):
 
     class Meta:
         db_table = 'division'
-
-
-class Sector(ModelWithDescr):
-    sector_id = models.AutoField(primary_key=True)
-
-    class Meta:
-        db_table = 'sector'
 
 
 class Nature(ModelWithDescr):
@@ -344,6 +388,7 @@ class Officer(models.Model):
 
     class Meta:
         db_table = 'officer'
+
 
 class Priority(ModelWithDescr, SortableMixin):
     priority_id = models.AutoField(primary_key=True)

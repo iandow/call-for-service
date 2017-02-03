@@ -24,8 +24,9 @@ from django.core.management.base import BaseCommand
 # - Nature Text
 # - Close Code
 # - Close Text
-from core.models import (District, Beat, Priority, Nature, CallSource, CloseCode, Call,
-                         City)
+from core.models import (District, Beat, Priority, Nature, CallSource,
+                         CloseCode, Call,
+                         City, Agency)
 
 
 def isnan(x):
@@ -36,6 +37,7 @@ def safe_int(x):
     if isnan(x):
         return None
     return int(x)
+
 
 def safe_float(x):
     if isnan(x):
@@ -67,6 +69,10 @@ class Command(BaseCommand):
         parser.add_argument('--reset', default=False, action='store_true',
                             help='Whether to clear the database before loading '
                                  '(defaults to False)')
+        parser.add_argument('--agency', type=str,
+                            help="The code for the agency the calls belong "
+                                 "to. Without this option, they will be "
+                                 "assigned to the first agency found.")
 
     def clear_database(self):
         self.log("Clearing database")
@@ -85,6 +91,12 @@ class Command(BaseCommand):
 
         if options['reset']:
             self.clear_database()
+
+        if options['agency']:
+            self.agency = Agency.objects.get(code=options['agency'])
+        else:
+            self.agency = Agency.objects.first()
+            self.log("Using default agency: " + self.agency.code)
 
         self.batch_size = 2000
 
@@ -127,6 +139,7 @@ class Command(BaseCommand):
                 safe_get = lambda col: c[col] if col in c else None
 
                 call = Call(call_id=c['Internal ID'],
+                            agency=self.agency,
                             time_received=safe_datetime(c['Time Received']),
                             first_unit_dispatch=safe_datetime(
                                 c['Time Dispatched']),
@@ -153,9 +166,8 @@ class Command(BaseCommand):
                 start += self.batch_size
             except Exception as ex:
                 the_exception = ex
-                import pdb;
+                import pdb
                 pdb.set_trace()
-
 
     def create_beats(self):
         self.log("Creating beats")
@@ -173,8 +185,9 @@ class Command(BaseCommand):
         df = self.df
 
         district_names = safe_sorted(df['District'].unique())
-        districts = [District.objects.get_or_create(descr=name)[0]
-                     for name in district_names]
+        districts = [
+            District.objects.get_or_create(agency=self.agency, descr=name)[0]
+            for name in district_names]
         district_map = {d.descr: d.district_id for d in districts}
         df['District ID'] = df['District'].apply(lambda x: district_map.get(x),
                                                  convert_dtype=False)
@@ -207,13 +220,13 @@ class Command(BaseCommand):
 
         source_tuples = [x for x in pd.DataFrame(
             df.groupby('Source Code')['Source Text'].min()).itertuples()
-                         if x[0]]
-        sources = [CallSource.objects.get_or_create(code=s[0], defaults={'descr': s[1]})[0]
+            if x[0]]
+        sources = [CallSource.objects.get_or_create(code=s[0],
+                                                    defaults={'descr': s[1]})[0]
                    for s in source_tuples]
         source_map = {s.code: s.call_source_id for s in sources}
         df['Source ID'] = df['Source Code'].apply(lambda x: source_map.get(x),
-                                             convert_dtype=False)
-
+                                                  convert_dtype=False)
 
     def create_natures(self):
         self.log("Creating natures")
@@ -221,7 +234,7 @@ class Command(BaseCommand):
 
         nature_tuples = [x for x in pd.DataFrame(
             df.groupby("Nature Code")['Nature Text'].min()).itertuples()
-                         if x[0]]
+            if x[0]]
         natures = [
             Nature.objects.get_or_create(key=n[0], defaults={'descr': n[1]})[0]
             for n in nature_tuples]
@@ -235,7 +248,7 @@ class Command(BaseCommand):
 
         close_tuples = [cc for cc in pd.DataFrame(
             df.groupby("Close Code")['Close Text'].min()).itertuples()
-                        if cc[0]]
+            if cc[0]]
         close_codes = [
             CloseCode.objects.get_or_create(code=cc[0],
                                             defaults={'descr': cc[1]})[0]

@@ -3,13 +3,14 @@ import csv
 from io import StringIO
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.http import StreamingHttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.views.generic import View
 from url_filter.filtersets import StrictMode
 
 from core import models
-from core.models import Call
+from core.models import Call, Agency
 from core.serializers import CallExportSerializer
 from ..filters import CallFilterSet
 
@@ -38,39 +39,80 @@ def build_filter(filter_set):
 
 
 class LandingPageView(View):
+
     def get(self, request):
+        agencies = Agency.objects.all()
+        if len(agencies) == 1:
+            return redirect(
+                reverse('agency', kwargs={"agency_code": agencies[0].code}))
+        else:
+            return render_to_response('agency_list.html',
+                                      {"agencies": agencies,
+                                       "agency": agencies[0]})
+            pass  # render
+
+
+class ViewWithAgencies(View):
+
+    def dispatch(self, request, *args, **kwargs):
+        agency_code = kwargs['agency_code']
+        self.agency = get_object_or_404(Agency, code=agency_code)
+        self.agencies = Agency.objects.all()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context(self, **kwargs):
+        context = kwargs.copy()
+        context.update({
+            'agency': self.agency,
+            'agencies': self.agencies
+        })
+        return context
+
+
+class AgencyLandingPageView(ViewWithAgencies):
+
+    def get(self, request, *args, **kwargs):
         return render_to_response(
-            "landing_page.html",
-            dict(show_allocation=(
-                'officer_allocation' in settings.INSTALLED_APPS)))
+            "agency_landing_page.html",
+            self.get_context(
+                show_allocation=(
+                    'officer_allocation' in settings.INSTALLED_APPS)))
 
 
-class CallListView(View):
+class CallListView(ViewWithAgencies):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="call_list",
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="call_list",
+                                      form=build_filter(CallFilterSet)))
 
 
-class CallVolumeView(View):
+class CallVolumeView(ViewWithAgencies):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="call_volume",
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="call_volume",
+                                      form=build_filter(CallFilterSet)))
 
 
-class ResponseTimeView(View):
+class ResponseTimeView(ViewWithAgencies):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="response_time",
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="response_time",
+                                      form=build_filter(CallFilterSet)))
 
 
-class MapView(View):
+class MapView(ViewWithAgencies):
+
     def get(self, request, *args, **kwargs):
         return render_to_response("dashboard.html",
-                                  dict(asset_chunk="call_map",
-                                       form=build_filter(CallFilterSet)))
+                                  self.get_context(
+                                      asset_chunk="call_map",
+                                      form=build_filter(CallFilterSet)))
 
 
 class Echo(object):
@@ -84,6 +126,7 @@ class Echo(object):
 
 
 class CSVIterator:
+
     def __init__(self, queryset, fields):
         self.queryset = queryset.iterator()
         pseudo_buffer = Echo()
@@ -97,7 +140,8 @@ class CSVIterator:
             yield self.writer.writerow(serializer.data)
 
 
-class CallExportView(View):
+class CallExportView(ViewWithAgencies):
+
     def get(self, request, *args, **kwargs):
         qs = Call.objects \
             .select_related('district') \

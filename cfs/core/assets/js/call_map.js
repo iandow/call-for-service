@@ -21,7 +21,7 @@ var Cluster = require(
 var PruneClusterForLeaflet = Cluster.PruneClusterForLeaflet;
 var PruneCluster = Cluster.PruneCluster;
 
-var url = "/api/call_map/";
+var url = "/api/" + AGENCY.code + "/call_map/";
 
 var dashboard = new Page({
     el: document.getElementById("dashboard"),
@@ -132,17 +132,17 @@ var ClusterMap = function (options) {
     }
 
     this.create = function () {
-        var northEast = L.latLng.apply(null, siteConfig.geo_ne_bound),
-            southWest = L.latLng.apply(null, siteConfig.geo_sw_bound),
+        var northEast = L.latLng.apply(null, MAP_INFO.neBound),
+            southWest = L.latLng.apply(null, MAP_INFO.swBound),
             bounds = L.latLngBounds(southWest, northEast);
 
         var map = L.map(
             "map", {
-                center: siteConfig.geo_center,
-                zoom: siteConfig.geo_default_zoom,
+                center: MAP_INFO.center,
+                zoom: MAP_INFO.zoom,
                 maxBounds: bounds,
-                minZoom: Math.min(siteConfig.geo_default_zoom, 11),
-                maxZoom: Math.max(siteConfig.geo_default_zoom, 18),
+                minZoom: Math.min(MAP_INFO.zoom, 11),
+                maxZoom: Math.max(MAP_INFO.zoom, 18),
                 scrollWheelZoom: true
             });
         this.map = map;
@@ -184,12 +184,12 @@ var ClusterMap = function (options) {
             layer.on({});
         }
 
-        const geojsonURL = siteConfig.geojson_url;
+        const geojsonURL = MAP_INFO.geojsonURL;
         let region;
-        if (siteConfig.use_beat) {
+        if (SITE_CONFIG.use_beat) {
             region = 'beat';
         }
-        else if (siteConfig.use_district) {
+        else if (SITE_CONFIG.use_district) {
             region = 'district';
         }
 
@@ -201,7 +201,7 @@ var ClusterMap = function (options) {
         }
 
         d3.json(
-            siteConfig.geojson_url,
+            MAP_INFO.geojsonURL,
             function (json) {
                 json.features = _(json.features).reject(
                     function (d) {

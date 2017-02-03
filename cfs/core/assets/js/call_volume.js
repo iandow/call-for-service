@@ -16,7 +16,7 @@ import d3 from "d3";
 import colorbrewer from "colorbrewer";
 import nv from "nvd3";
 
-var callVolumeURL = "/api/call_volume/";
+var callVolumeURL = "/api/" + AGENCY.code + "/call_volume/";
 
 var outFormats = {
     "month": "%b %Y",
@@ -33,7 +33,7 @@ var dashboard = new Page({
         "capitalize": function (string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         },
-        config: siteConfig,
+        config: SITE_CONFIG,
         data: {
             "volume_over_time": {
                 "period_size": "day",
@@ -121,14 +121,14 @@ function cleanupData(data) {
         values: data.volume_by_source
     }];
 
-    if (siteConfig.use_beat) {
+    if (SITE_CONFIG.use_beat) {
         data.map_data = _.reduce(
             data.volume_by_beat,
             function (memo, d) {
                 memo[d.name] = d.volume;
                 return memo;
             }, {});
-    } else if (siteConfig.use_district) {
+    } else if (SITE_CONFIG.use_district) {
         data.map_data = _.reduce(
             data.volume_by_district,
             function (memo, d) {
@@ -246,7 +246,7 @@ var volumeByDOWChart = new HorizontalBarChart({
 monitorChart(dashboard, "data.volume_by_dow", volumeByDOWChart.update);
 
 
-if (siteConfig.use_shift) {
+if (SITE_CONFIG.use_shift) {
     var volumeByShiftChart = new HorizontalBarChart({
         el: "#volume-by-shift",
         filter: "shift",
@@ -266,7 +266,7 @@ if (siteConfig.use_shift) {
 
 
 var volumeByNatureGroupChart = null;
-if (siteConfig.use_nature_group) {
+if (SITE_CONFIG.use_nature_group) {
     volumeByNatureGroupChart = new DiscreteBarChart({
         el: "#volume-by-nature",
         dashboard: dashboard,
@@ -283,7 +283,7 @@ if (siteConfig.use_nature_group) {
     });
 
     monitorChart(dashboard, "data.volume_by_nature_group", volumeByNatureGroupChart.update);
-} else if (siteConfig.use_nature) {
+} else if (SITE_CONFIG.use_nature) {
     volumeByNatureGroupChart = new DiscreteBarChart({
         el: "#volume-by-nature",
         dashboard: dashboard,
@@ -302,7 +302,7 @@ if (siteConfig.use_nature_group) {
     monitorChart(dashboard, "data.volume_by_nature", volumeByNatureGroupChart.update);
 }
 
-if (siteConfig.use_call_source) {
+if (SITE_CONFIG.use_call_source) {
     var volumeBySourceChart = new HorizontalBarChart({
         el: "#volume-by-source",
         filter: "initiated_by",
@@ -320,8 +320,8 @@ if (siteConfig.use_call_source) {
     monitorChart(dashboard, "data.volume_by_source", volumeBySourceChart.update);
 }
 
-if (siteConfig.use_beat || siteConfig.use_district) {
-    const region = siteConfig.use_beat
+if (SITE_CONFIG.use_beat || SITE_CONFIG.use_district) {
+    const region = SITE_CONFIG.use_beat
           ? 'beat'
           : 'district';
 
@@ -416,4 +416,3 @@ function buildVolumeByDateChart(data) {
 }
 
 monitorChart(dashboard, "data.volume_by_date", buildVolumeByDateChart);
-

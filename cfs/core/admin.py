@@ -3,7 +3,8 @@ from django.forms import TextInput
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 from adminsortable.admin import SortableAdmin
-from .models import Beat, Bureau, CallSource, CallUnit, City, CloseCode, \
+from .models import Agency, Beat, Bureau, CallSource, CallUnit, City, \
+    CloseCode, \
     District, Division, Nature, NatureGroup, \
     Officer, \
     Priority, Shift, ShiftUnit, SiteConfiguration, Squad, \
@@ -16,9 +17,6 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
     fieldsets = (
         (None, {
             'fields': ('maintenance_mode',)
-        }),
-        ('Department', {
-            'fields': ('department_name', 'department_abbr',),
         }),
         ('Features', {
             'fields': (
@@ -45,12 +43,11 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
     )
 
 
-### model inline classes
+# model inline classes
 
 class BeatInline(admin.TabularInline):
     model = Beat
     extra = 0
-    exclude = ('sector',)
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
@@ -73,13 +70,34 @@ class NatureInline(admin.StackedInline):
     can_delete = False
 
 
-
 class ShiftUnitInline(admin.TabularInline):
     model = ShiftUnit
     extra = 0
 
 
-### model admin classes
+# model admin classes
+
+@admin.register(Agency)
+class AgencyAdmin(admin.ModelAdmin):
+    list_display = ('descr', 'code',)
+
+    fieldsets = (
+        (None, {
+            'fields': ('code', 'descr',)
+        }),
+        ('Geography', {
+            'description': "These fields are optional. They override the same "
+                           "settings in the site configuration.",
+            'fields': (
+                'geo_center',
+                'geo_ne_bound',
+                'geo_sw_bound',
+                'geo_default_zoom',
+                'geojson_url',
+            )
+        })
+    )
+
 
 @admin.register(Beat)
 class BeatAdmin(admin.ModelAdmin):
@@ -133,7 +151,6 @@ class CloseCodeAdmin(admin.ModelAdmin):
 
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    exclude = ('sector',)
     inlines = [BeatInline, CallUnitInline]
     formfield_overrides = {
         models.TextField: {'widget': TextInput(attrs={'size': '50'})}

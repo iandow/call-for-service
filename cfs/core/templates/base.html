@@ -1,11 +1,11 @@
 {% spaceless %}
-    {% load staticfiles %}
-    {% load render_bundle from webpack_loader %}
-    {% load serializers %}
-    {% load solo_tags %}
-    {% load hooks_tags %}
+{% load staticfiles %}
+{% load render_bundle from webpack_loader %}
+{% load serializers %}
+{% load solo_tags %}
+{% load hooks_tags %}
 
-    {% get_solo 'core.SiteConfiguration' as site_config %}
+{% get_solo 'core.SiteConfiguration' as site_config %}
 {% endspaceless %}
 <!DOCTYPE html>
 <html lang="en">
@@ -13,7 +13,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ site_config.department_abbr }} CFS</title>
+    <title>{{ agency.code }} CFS</title>
     <link rel="shortcut icon" href="{% static 'favicon.ico' %}"/>
     <link href='https://fonts.googleapis.com/css?family=Audiowide'
           rel='stylesheet' type='text/css'>
@@ -22,17 +22,18 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+{% block content_without_container %}
 <div class="container-fluid container-max-1800" id="dashboard">
     {% block content %}
     {% endblock %}
 </div>
 <!-- end container-fluid -->
+{% endblock %}
 
 <div class="container-fluid footer">
     <div class="row">
         <div class="col-md-12">
-            <img src="{% static "img/RTI_logo_blue.gif" %}"
-                 alt="RTI International">
+            <img src="{% static 'img/RTI_logo_blue.gif' %}" alt="RTI International">
             Copyright 2016 RTI International.
         </div>
     </div>
@@ -42,23 +43,53 @@
     <nav class="navbar navbar-inverse">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="/call_volume[[ filterHash ]]">
-                    {{ site_config.department_abbr }} CFS
+                <a class="navbar-brand"
+                   href="{% url 'call_volume' agency_code=agency.code %}[[ filterHash ]]">
+                    {{ agency.code }} CFS
                 </a>
             </div>
             <ul class="nav navbar-nav">
-                <li><a href="/call_volume[[ filterHash ]]">Call Volume</a></li>
-                <li><a href="/response_time[[ filterHash ]]">Response Time</a></li>
-                <li><a href="/calls[[ filterHash ]]">Call List</a></li>
-                <li><a href="/calls.csv?[[ queryParams ]]">Export Calls as
-                    CSV</a>
+                <li>
+                    <a href="{% url 'call_volume' agency_code=agency.code %}[[ filterHash ]]">Call
+                        Volume</a></li>
+                <li>
+                    <a href="{% url 'response_time' agency_code=agency.code %}[[ filterHash ]]">Response
+                        Time</a></li>
+                <li>
+                    <a href="{% url 'calls' agency_code=agency.code %}[[ filterHash ]]">Call
+                        List</a></li>
+                <li>
+                    <a href="{% url 'calls_csv' agency_code=agency.code %}?[[ queryParams ]]">Export
+                        Calls as
+                        CSV</a>
                 </li>
-                <li><a href="/call_map[[ filterHash ]]">Utilization
-                    <sup><i>beta</i></sup></a>
+                <li>
+                    <a href="{% url 'call_map' agency_code=agency.code %}[[ filterHash ]]">Utilization
+                    </a>
                 </li>
                 {% hook 'navbar' %}
             </ul>
+
             <ul class="nav navbar-nav navbar-right">
+                {% if agencies|length > 1 %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                       role="button" aria-haspopup="true" aria-expanded="false">
+                        Choose another agency
+                        <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        {% for ag in agencies %}
+                        {% if ag != agency %}
+                        <li>
+                            <a href="{% url 'agency' agency_code=ag.code %}">
+                                {{ ag.descr }}
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endif %}
                 <li>
                     <p class="navbar-text">[[ rightText ]]</p>
                 </li>
@@ -70,8 +101,16 @@
 
 <!-- Latest compiled and minified JavaScript -->
 <script>
-    var filterForm = {{ form|jsonify }};
-    var siteConfig = {{ site_config|model_to_dict|jsonify }};
+    var FILTER_FORM = {{ form|jsonify }};
+    var SITE_CONFIG = {{ site_config|model_to_dict|jsonify }};
+    var AGENCY = {{ agency|model_to_dict|jsonify }};
+    var MAP_INFO = {
+        geojsonURL: AGENCY.geojson_url || SITE_CONFIG.geojson_url,
+        neBound: AGENCY.geo_ne_bound || SITE_CONFIG.geo_ne_bound,
+        swBound: AGENCY.geo_sw_bound || SITE_CONFIG.geo_sw_bound,
+        center: AGENCY.geo_center || SITE_CONFIG.geo_center,
+        zoom: AGENCY.geo_default_zoom || SITE_CONFIG.geo_default_zoom
+    }
 </script>
 {% render_bundle 'commons' 'js' %}
 {% block javascript %}{% endblock %}

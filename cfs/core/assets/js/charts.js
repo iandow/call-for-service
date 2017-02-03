@@ -520,7 +520,7 @@ export var RegionMap = function (options) {
     this.dataDescr = options.dataDescr;
     this.region = options.region || "district";
 
-    this.geojsonURL = siteConfig.geojson_url;
+    this.geojsonURL = MAP_INFO.geojsonURL;
 
     if (!this.geojsonURL) {
         throw "You must set a URL to your GeoJSON file in core settings before using this map.";
@@ -546,17 +546,17 @@ export var RegionMap = function (options) {
     };
 
     this.create = function () {
-        var northEast = L.latLng.apply(null, siteConfig.geo_ne_bound),
-            southWest = L.latLng.apply(null, siteConfig.geo_sw_bound),
+        var northEast = L.latLng.apply(null, MAP_INFO.neBound),
+            southWest = L.latLng.apply(null, MAP_INFO.swBound),
             bounds = L.latLngBounds(southWest, northEast);
 
         var map = L.map(
             "map", {
-                center: siteConfig.geo_center,
-                zoom: siteConfig.geo_default_zoom,
+                center: MAP_INFO.center,
+                zoom: MAP_INFO.zoom,
                 maxBounds: bounds,
-                minZoom: Math.min(siteConfig.geo_default_zoom, 11),
-                maxZoom: Math.max(siteConfig.geo_default_zoom, 16),
+                minZoom: Math.min(MAP_INFO.zoom, 11),
+                maxZoom: Math.max(MAP_INFO.zoom, 16),
                 scrollWheelZoom: false
             });
 
@@ -591,7 +591,7 @@ export var RegionMap = function (options) {
         var info = L.control();
 
         info.onAdd = function () {
-            self._div = L.DomUtil.create("div", "mapinfo");
+            self._div = L.DomUtil.create("div", "MAP_INFO");
             self._div.innerHTML = "<div>Hover over a " + self.region + "</div>";
             return self._div;
         };
@@ -790,4 +790,3 @@ export var RegionMap = function (options) {
         self.create();
     });
 };
-
