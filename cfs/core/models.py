@@ -28,6 +28,7 @@ class SiteConfiguration(SingletonModel):
 
     # Features
     use_shift = models.BooleanField("Use shift?", default=False)
+    use_department = models.BooleanField("Use department?", default=False)
     use_district = models.BooleanField("Use district?", default=False)
     use_beat = models.BooleanField("Use beat?", default=False)
     use_squad = models.BooleanField("Use squad?", default=False)
@@ -246,6 +247,7 @@ class Call(models.Model):
     officer_response_time = models.DurationField(blank=True, null=True,
                                                  db_index=True)
     overall_response_time = models.DurationField(blank=True, null=True)
+    department = models.ForeignKey('Department', blank=True, null=True)
 
     def update_derived_fields(self):
         self.month_received = self.time_received.month
@@ -335,6 +337,13 @@ class CloseCode(ModelWithCodeAndDescr):
 
     class Meta:
         db_table = 'close_code'
+
+
+class Department(ModelWithDescr):
+    department_id = models.AutoField(primary_key=True)
+
+    class Meta:
+        db_table = 'department'
 
 
 class District(models.Model):

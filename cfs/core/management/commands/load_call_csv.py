@@ -20,13 +20,13 @@ from django.core.management.base import BaseCommand
 # - Source
 # - District
 # - Beat
+# - Department
 # - Nature Code
 # - Nature Text
 # - Close Code
 # - Close Text
 from core.models import (District, Beat, Priority, Nature, CallSource,
-                         CloseCode, Call,
-                         City, Agency)
+                         CloseCode, Call, City, Agency, Department)
 
 
 def isnan(x):
@@ -118,6 +118,7 @@ class Command(BaseCommand):
             ('Close Code', self.create_close_codes),
             ('Source Code', self.create_sources),
             ('City', self.create_cities),
+            ('Department', self.create_departments),
         ]
 
         for col, method in creation_methods:
@@ -155,6 +156,7 @@ class Command(BaseCommand):
                             beat_id=safe_int(safe_get('Beat ID')),
                             call_source_id=safe_int(safe_get('Source ID')),
                             close_code_id=safe_int(safe_get('Close Code ID')),
+                            department_id=safe_int(safe_get('Department')),
                             geox=safe_float(c['Longitude']),
                             geoy=safe_float(c['Latitude']))
                 call.update_derived_fields()
@@ -213,6 +215,18 @@ class Command(BaseCommand):
         priority_map = {p.descr: p.priority_id for p in priorities}
         df['Priority ID'] = df['Priority'].apply(lambda x: priority_map.get(x),
                                                  convert_dtype=False)
+
+    def create_departments(self):
+        self.log("Creating departments")
+        df = self.df
+
+        department_names = safe_sorted(df['Department'].unique())
+        departments = [Department.objects.get_or_create(descr=name)[0]
+                       for name in department_names]
+        department_map = {d.descr: d.department_id for d in departments}
+        df['Department ID'] = df['Department'].apply(
+            lambda x: department_map.get(x),
+            convert_dtype=False)
 
     def create_sources(self):
         self.log("Creating sources")
