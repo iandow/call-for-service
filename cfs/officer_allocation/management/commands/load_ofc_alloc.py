@@ -124,7 +124,7 @@ class Command(BaseCommand):
             call_logs = []
 
             for idx, c in batch.iterrows():
-                if ignore_unmatched and Call.objects.filter(pk=c['Internal ID']).count() > 0:
+                if ignore_unmatched and Call.objects.filter(pk=c['Internal ID']).count() == 0:
                     continue
 
                 call_log = CallLog(call_id=c['Internal ID'],
