@@ -64,7 +64,7 @@ how your officers are spending their time during the day.  It requires files wit
 
 More specifically, the "call log" file should contain the following fields (again, Code/Text fields must match up):
 
- - Internal ID (**MUST** map to a call in your calls file)
+ - Internal ID (should map to a call in your calls file)
  - Transaction Code (Arrived, Dispatched, etc)
  - Transaction Text
  - Timestamp

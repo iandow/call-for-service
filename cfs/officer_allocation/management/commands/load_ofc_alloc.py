@@ -37,6 +37,10 @@ class Command(BaseCommand):
                             "database, but it's necessary to see new data reflected in the "
                             "officer allocation view.  Use this if you're loading multiple "
                             "sets of data in a row.")
+        parser.add_argument('--ignore-unmatched-call-log', action='store_true',
+                            help="If given, ignore errors when a call log entry is given "
+                            "for a call that doesn't exist in the database.  Otherwise, "
+                            "an error will be thrown.")
 
     def log(self, message):
         if self.start_time:
@@ -73,7 +77,7 @@ class Command(BaseCommand):
 
         self.create_units()
 
-        self.create_call_log()
+        self.create_call_log(ignore_unmatched=options['ignore_unmatched_call_log'])
         self.create_shifts()
 
         self.create_officer_activity_types()
@@ -109,13 +113,20 @@ class Command(BaseCommand):
         self.shifts['Unit ID'] = self.shifts['Unit'].apply(lambda x: unit_map.get(x),
                                                          convert_dtype=False)
 
-    def create_call_log(self):
+    def create_call_log(self, ignore_unmatched=False):
+        '''
+        If ignore_unmatched is True, we won't throw an error upon getting call log entries
+        that aren't able to match to calls and will silently discard them.
+        '''
         start = 0
         while start < len(self.call_log):
             batch = self.call_log[start:start + self.batch_size]
             call_logs = []
 
             for idx, c in batch.iterrows():
+                if ignore_unmatched and Call.objects.filter(pk=c['Internal ID']).count() > 0:
+                    continue
+
                 call_log = CallLog(call_id=c['Internal ID'],
                                    call_unit_id=c['Unit ID'],
                                    time_recorded=safe_datetime(c['Timestamp']),
