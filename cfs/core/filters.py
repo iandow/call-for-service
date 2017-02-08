@@ -10,6 +10,7 @@ from . import models
 
 
 class BetterDjangoFilterBackend(DjangoFilterBackend):
+
     def prepare_spec(self, spec):
         if spec.lookup == "exact":
             return LOOKUP_SEP.join(spec.components)
@@ -115,18 +116,21 @@ def create_filterset(model, definition, name=None):
 
 
 class SquadFilterSet(ModelFilterSet):
+
     class Meta:
         model = models.Squad
         fields = ["squad_id"]
 
 
 class CallUnitFilterSet(ModelFilterSet):
+
     class Meta:
         model = models.CallUnit
         fields = ["call_unit_id", "squad", "beat", "district"]
 
 
 class NatureFilterSet(ModelFilterSet):
+
     class Meta:
         model = models.Nature
         fields = ["nature_id", "nature_group"]
@@ -144,13 +148,15 @@ CallFilterSet = create_filterset(
              [0, "Monday"], [1, "Tuesday"], [2, "Wednesday"], [3, "Thursday"],
              [4, "Friday"], [5, "Saturday"], [6, "Sunday"]
          ]},
+        {"name": "department", "rel": "Department"},
         {"name": "district", "rel": "District"},
         {"name": "beat", "rel": "Beat"},
         {"name": "squad", "rel": "Squad", "method": True, "rel": "Squad",
          "lookups": ["exact"]},
         {"name": "priority", "rel": "Priority"},
         {"name": "nature", "rel": "Nature"},
-        {"name": "nature__nature_group", "label": "Nature Group", "rel": "NatureGroup"},
+        {"name": "nature__nature_group",
+            "label": "Nature Group", "rel": "NatureGroup"},
         {"name": "initiated_by", "type": "select", "method": True,
          "lookups": ["exact"],
          "options": [[0, "Officer"], [1, "Citizen"]]},
@@ -158,4 +164,3 @@ CallFilterSet = create_filterset(
         {"name": "cancelled", "type": "boolean"},
     ]
 )
-
