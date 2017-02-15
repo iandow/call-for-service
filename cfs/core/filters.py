@@ -121,12 +121,18 @@ class SquadFilterSet(ModelFilterSet):
         model = models.Squad
         fields = ["squad_id"]
 
+# class DepartmentFilterSet(ModelFilterSet):
+
+#     class Meta:
+#         model = models.Department
+#         fields = ["department_id"]
+
 
 class CallUnitFilterSet(ModelFilterSet):
 
     class Meta:
         model = models.CallUnit
-        fields = ["call_unit_id", "squad", "beat", "district"]
+        fields = ["call_unit_id", "squad", "beat", "district", "department"]
 
 
 class NatureFilterSet(ModelFilterSet):

@@ -9,5 +9,6 @@ OfficerActivityFilterSet = create_filterset(
         {"name": "call_unit__district", "label": "District", "rel": "District"},
         {"name": "time", "type": "daterange"},
         {"name": "call_unit__squad", "label": "Squad", "rel": "Squad"},
+        {"name": "call_unit__department", "label": "Department", "rel": "Department"},
     ]
 )
