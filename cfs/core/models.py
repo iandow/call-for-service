@@ -319,6 +319,7 @@ class CallUnit(models.Model):
     district = models.ForeignKey("District", blank=True, null=True,
                                  related_name="+")
     is_patrol_unit = models.BooleanField(default=True)
+    department = models.ForeignKey('Department', blank=True, null=True)
     descr = models.TextField("Description")
 
     def __str__(self):
