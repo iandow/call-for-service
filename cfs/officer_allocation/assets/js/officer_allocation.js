@@ -204,7 +204,7 @@ function buildAllocationOverTimeChart(data) {
 
     chart.yAxis
       .axisLabel("Average Officers Allocated")
-      .tickFormat(d3.format(",.2r"));
+      .tickFormat(d3.format(",.3r"));
 
     // Keep NaNs from showing up in the tooltip header
     // This was supposed to have been fixed, but
