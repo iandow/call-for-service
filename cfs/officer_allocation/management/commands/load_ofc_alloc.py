@@ -75,6 +75,7 @@ class Command(BaseCommand):
                                  parse_dates=['In Timestamp', 'Out Timestamp'],
                                  dtype={'Unit': str})
 
+        self.create_departments()
         self.create_units()
 
         self.create_call_log(ignore_unmatched=options['ignore_unmatched_call_log'])
@@ -99,14 +100,36 @@ class Command(BaseCommand):
         df['Transaction ID'] = df['Transaction Code'].apply(lambda x: transaction_map.get(x),
                                          convert_dtype=False)
 
+    def create_departments(self):
+        self.log("Creating departments")
+
+        department_series = pd.concat([self.call_log['Department'], self.shifts['Department']])
+
+        department_names = safe_sorted(department_series.unique())
+        departments = [Department.objects.get_or_create(descr=name)[0]
+                       for name in department_names]
+        department_map = {d.descr: d.department_id for d in departments}
+        self.call_log['Department ID'] = self.call_log['Department'].apply(
+            lambda x: department_map.get(x),
+            convert_dtype=False)
+        self.shifts['Department ID'] = self.shifts['Department'].apply(
+            lambda x: department_map.get(x),
+            convert_dtype=False)
+
     def create_units(self):
         self.log("Creating units")
 
-        unit_series = pd.concat([self.call_log['Unit'], self.shifts['Unit']])
+        unit_series = pd.concat([self.call_log[['Unit', 'Department ID']],
+                                 self.shifts[['Unit', 'Department ID']]])
 
-        unit_names = safe_sorted(unit_series.unique())
-        units = [CallUnit.objects.get_or_create(descr=name, agency=self.agency)[0]
-                 for name in unit_names]
+        unit_departments = safe_sorted(unit_series.unique())
+
+        units = []
+        for row in unit_departments.itertuples():
+            units.append(CallUnit.objects.get_or_create(descr=row['Unit'],
+                                                        agency=self.agency,
+                                                        department_id=row['Department ID'])[0])
+
         unit_map = {u.descr: u.call_unit_id for u in units}
         self.call_log['Unit ID'] = self.call_log['Unit'].apply(lambda x: unit_map.get(x),
                                                                convert_dtype=False)

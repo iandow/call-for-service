@@ -33,6 +33,7 @@ that end in "Code" and "Text" come in pairs and must be matched.
 - Nature Text
 - Close Code
 - Close Text
+- Department
 
 Having additional headers is fine.
 
@@ -69,12 +70,14 @@ More specifically, the "call log" file should contain the following fields (agai
  - Transaction Text
  - Timestamp
  - Unit
+ - Department
 
 And the "shift" file should contain the following fields:
 
  - Unit
  - In Timestamp
  - Out Timestamp
+ - Department
 
 You will also need to do some configuration through the admin interface in order for the officer allocation view to work properly.  **NOTE**: You must perform these steps _after_ your call data is loaded but _before_ you load any officer allocation data; the officer allocation configuration must be set up correctly before its data is loaded for the loading scripts to work correctly.
 

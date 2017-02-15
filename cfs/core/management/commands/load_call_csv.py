@@ -156,7 +156,7 @@ class Command(BaseCommand):
                             beat_id=safe_int(safe_get('Beat ID')),
                             call_source_id=safe_int(safe_get('Source ID')),
                             close_code_id=safe_int(safe_get('Close Code ID')),
-                            department_id=safe_int(safe_get('Department')),
+                            department_id=safe_int(safe_get('Department ID')),
                             geox=safe_float(c['Longitude']),
                             geoy=safe_float(c['Latitude']))
                 call.update_derived_fields()
