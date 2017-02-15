@@ -123,13 +123,15 @@ class Command(BaseCommand):
         unit_series = pd.concat([self.call_log[['Unit', 'Department ID']],
                                  self.shifts[['Unit', 'Department ID']]])
 
-        unit_departments = safe_sorted(unit_series.drop_duplicates())
+        unit_departments = safe_sorted(
+            (c['Unit'], c['Department ID']) for _, c in unit_series.drop_duplicates().iterrows()
+        )
 
         units = []
-        for row in unit_departments.itertuples():
-            units.append(CallUnit.objects.get_or_create(descr=row['Unit'],
+        for unit, department_id in unit_departments:
+            units.append(CallUnit.objects.get_or_create(descr=unit,
                                                         agency=self.agency,
-                                                        department_id=row['Department ID'])[0])
+                                                        department_id=department_id)[0])
 
         unit_map = {u.descr: u.call_unit_id for u in units}
         self.call_log['Unit ID'] = self.call_log['Unit'].apply(lambda x: unit_map.get(x),
