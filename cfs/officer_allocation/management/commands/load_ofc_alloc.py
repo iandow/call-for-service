@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from core.models import (Call, CallLog, Transaction, CallUnit, ShiftUnit, Shift,
-                         Agency, update_materialized_views)
+                         Agency, update_materialized_views, Department)
 from officer_allocation.models import (OfficerActivityType)
 
 def isnan(x):
