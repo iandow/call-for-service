@@ -123,7 +123,7 @@ class Command(BaseCommand):
         unit_series = pd.concat([self.call_log[['Unit', 'Department ID']],
                                  self.shifts[['Unit', 'Department ID']]])
 
-        unit_departments = safe_sorted(unit_series.unique())
+        unit_departments = safe_sorted(unit_series.drop_duplicates())
 
         units = []
         for row in unit_departments.itertuples():
