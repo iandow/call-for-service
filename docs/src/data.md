@@ -34,6 +34,7 @@ that end in "Code" and "Text" come in pairs and must be matched.
 - Close Code
 - Close Text
 - Department
+- Primary Unit
 
 Having additional headers is fine.
 

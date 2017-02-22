@@ -108,7 +108,7 @@ class Command(BaseCommand):
 
         department_names = safe_sorted(department_series.unique())
         departments = [Department.objects.get_or_create(descr=name)[0]
-                       for name in department_names]
+                        for name in department_names]
         department_map = {d.descr: d.department_id for d in departments}
         self.call_log['Department ID'] = self.call_log['Department'].apply(
             lambda x: department_map.get(x),
@@ -125,6 +125,7 @@ class Command(BaseCommand):
 
         unit_departments = safe_sorted(
             (c['Unit'], c['Department ID']) for _, c in unit_series.drop_duplicates().iterrows()
+            if not isnan(c['Unit'])
         )
 
         units = []
