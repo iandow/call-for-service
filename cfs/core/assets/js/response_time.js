@@ -570,6 +570,16 @@ function buildORTChart(data) {
         };
     };
 
+    var tooltipTop = 0;
+    var tooltipLeft = 0;
+
+    tooltip.position = function () {
+        return {
+            top: tooltipTop,
+            left: tooltipLeft,
+        };
+    };
+
     g
         .on("mouseover", function (d, i) {
             tooltip.data(tooltipData(d, i)).hidden(false);
@@ -578,7 +588,8 @@ function buildORTChart(data) {
             tooltip.data(tooltipData(d, i)).hidden(true);
         })
         .on("mousemove", function () {
-            tooltip.position({top: d3.event.pageY, left: d3.event.pageX})();
+            tooltipTop = d3.event.pageY;
+            tooltipLeft = d3.event.pageX;
         });
 
     function resize() {
