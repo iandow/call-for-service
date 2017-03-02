@@ -1,10 +1,11 @@
+import math
 import datetime as dt
 import pandas as pd
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from core.models import (CallLog, Transaction, CallUnit, ShiftUnit, Shift,
-                         Agency, update_materialized_views)
+from core.models import (Call, CallLog, Transaction, CallUnit, ShiftUnit, Shift,
+                         Agency, update_materialized_views, Department)
 from officer_allocation.models import (OfficerActivityType)
 
 def isnan(x):
@@ -31,6 +32,16 @@ class Command(BaseCommand):
                             help="The code for the agency the officer allocation data "
                             "belongs to.  Without this option, it will be assigned to the"
                             "first agency found.")
+        parser.add_argument('--skip-view-refresh', action='store_true',
+                            help="If given, don't refresh materialized views.  The refresh "
+                            "takes a fair bit of time depending on how much data is in the "
+                            "database, but it's necessary to see new data reflected in the "
+                            "officer allocation view.  Use this if you're loading multiple "
+                            "sets of data in a row.")
+        parser.add_argument('--ignore-unmatched-call-log', action='store_true',
+                            help="If given, ignore errors when a call log entry is given "
+                            "for a call that doesn't exist in the database.  Otherwise, "
+                            "an error will be thrown.")
 
     def log(self, message):
         if self.start_time:
@@ -65,15 +76,17 @@ class Command(BaseCommand):
                                  parse_dates=['In Timestamp', 'Out Timestamp'],
                                  dtype={'Unit': str})
 
+        self.create_departments()
         self.create_units()
 
-        self.create_call_log()
+        self.create_call_log(ignore_unmatched=options['ignore_unmatched_call_log'])
         self.create_shifts()
 
         self.create_officer_activity_types()
 
-        self.log("Updating materialized views")
-        update_materialized_views()
+        if not options['skip_view_refresh']:
+            self.log("Updating materialized views")
+            update_materialized_views()
 
     def create_transactions(self):
         self.log("Creating transactions")
@@ -88,27 +101,59 @@ class Command(BaseCommand):
         df['Transaction ID'] = df['Transaction Code'].apply(lambda x: transaction_map.get(x),
                                          convert_dtype=False)
 
+    def create_departments(self):
+        self.log("Creating departments")
+
+        department_series = pd.concat([self.call_log['Department'], self.shifts['Department']])
+
+        department_names = safe_sorted(department_series.unique())
+        departments = [Department.objects.get_or_create(descr=name)[0]
+                        for name in department_names]
+        department_map = {d.descr: d.department_id for d in departments}
+        self.call_log['Department ID'] = self.call_log['Department'].apply(
+            lambda x: department_map.get(x),
+            convert_dtype=False)
+        self.shifts['Department ID'] = self.shifts['Department'].apply(
+            lambda x: department_map.get(x),
+            convert_dtype=False)
+
     def create_units(self):
         self.log("Creating units")
 
-        unit_series = pd.concat([self.call_log['Unit'], self.shifts['Unit']])
+        unit_series = pd.concat([self.call_log[['Unit', 'Department ID']],
+                                 self.shifts[['Unit', 'Department ID']]])
 
-        unit_names = safe_sorted(unit_series.unique())
-        units = [CallUnit.objects.get_or_create(descr=name, agency=self.agency)[0]
-                 for name in unit_names]
+        unit_departments = safe_sorted(
+            (c['Unit'], c['Department ID']) for _, c in unit_series.drop_duplicates().iterrows()
+            if not isnan(c['Unit'])
+        )
+
+        units = []
+        for unit, department_id in unit_departments:
+            units.append(CallUnit.objects.get_or_create(descr=unit,
+                                                        agency=self.agency,
+                                                        department_id=department_id)[0])
+
         unit_map = {u.descr: u.call_unit_id for u in units}
         self.call_log['Unit ID'] = self.call_log['Unit'].apply(lambda x: unit_map.get(x),
                                                                convert_dtype=False)
         self.shifts['Unit ID'] = self.shifts['Unit'].apply(lambda x: unit_map.get(x),
                                                          convert_dtype=False)
 
-    def create_call_log(self):
+    def create_call_log(self, ignore_unmatched=False):
+        '''
+        If ignore_unmatched is True, we won't throw an error upon getting call log entries
+        that aren't able to match to calls and will silently discard them.
+        '''
         start = 0
         while start < len(self.call_log):
             batch = self.call_log[start:start + self.batch_size]
             call_logs = []
 
             for idx, c in batch.iterrows():
+                if ignore_unmatched and Call.objects.filter(pk=c['Internal ID']).count() == 0:
+                    continue
+
                 call_log = CallLog(call_id=c['Internal ID'],
                                    call_unit_id=c['Unit ID'],
                                    time_recorded=safe_datetime(c['Timestamp']),

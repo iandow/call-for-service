@@ -310,7 +310,7 @@ class CallSource(ModelWithDescr):
         db_table = 'call_source'
 
 
-class CallUnit(ModelWithDescr):
+class CallUnit(models.Model):
     call_unit_id = models.AutoField(primary_key=True)
     agency = models.ForeignKey('Agency')
     squad = models.ForeignKey('Squad', blank=True, null=True,
@@ -319,9 +319,19 @@ class CallUnit(ModelWithDescr):
     district = models.ForeignKey("District", blank=True, null=True,
                                  related_name="+")
     is_patrol_unit = models.BooleanField(default=True)
+    department = models.ForeignKey('Department', blank=True, null=True)
+    descr = models.TextField("Description")
+
+    def __str__(self):
+        if self.descr:
+            return self.descr
+        else:
+            return super().__str__()
 
     class Meta:
         db_table = 'call_unit'
+        ordering = ['descr']
+        unique_together = ("agency", "descr")
 
 
 class City(ModelWithDescr):
