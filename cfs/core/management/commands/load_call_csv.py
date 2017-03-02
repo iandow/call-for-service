@@ -26,6 +26,8 @@ from django.core.management.base import BaseCommand
 # - Nature Text
 # - Close Code
 # - Close Text
+from django.db import IntegrityError
+
 from core.models import (District, Beat, Priority, Nature, CallSource,
                          CloseCode, Call, City, Agency, Department,
                          CallUnit)
@@ -63,6 +65,13 @@ def safe_sorted(coll):
     return sorted(x for x in coll if not isnan(x))
 
 
+def uniq_list_by_key(alist, key):
+    """Make a list unique by using a key function over its items."""
+    seen = set()
+    # set().add() returns None, making this work.
+    return [seen.add(key(obj)) or obj for obj in alist if key(obj) not in seen]
+
+
 class Command(BaseCommand):
     help = "Load call for service data from a CSV."
 
@@ -75,6 +84,9 @@ class Command(BaseCommand):
                             help="The code for the agency the calls belong "
                                  "to. Without this option, they will be "
                                  "assigned to the first agency found.")
+        parser.add_argument('--update', default=False, action='store_true',
+                            help='Whether to update calls that have '
+                                 'previously been saved.')
 
     def clear_database(self):
         self.log("Clearing database")
@@ -128,19 +140,46 @@ class Command(BaseCommand):
             if col in self.df:
                 method()
 
-        self.create_calls()
+        self.create_calls(update=options['update'])
 
-    def create_calls(self):
+    def update_call(self, call, **kwargs):
+        for attr, value in kwargs.items():
+            setattr(call, attr, value)
+        call.update_derived_fields()
+        call.save()
+
+    def create_calls(self, update):
         start = 0
         while start < len(self.df):
             batch = self.df[start:start + self.batch_size]
             calls = []
 
             for idx, c in batch.iterrows():
-                if Call.objects.filter(pk=c['Internal ID']).count() > 0:
-                    continue
-
                 safe_get = lambda col: c[col] if col in c else None
+
+                if Call.objects.filter(pk=c['Internal ID']).count() > 0:
+                    if update:
+                        call = Call.objects.get(call_id=c['Internal ID'])
+                        self.update_call(
+                            call,
+                            agency=self.agency,
+                            time_received=safe_datetime(c['Time Received']),
+                            first_unit_dispatch=safe_datetime(
+                                c['Time Dispatched']),
+                            first_unit_arrive=safe_datetime(c['Time Arrived']),
+                            time_closed=safe_datetime(c['Time Closed']),
+                            street_address=safe_get('Street Address'),
+                            zip_code=safe_zip(safe_get('Zip')),
+                            nature_id=safe_int(safe_get('Nature ID')),
+                            city_id=safe_int(safe_get('City ID')),
+                            priority_id=safe_int(safe_get('Priority ID')),
+                            district_id=safe_int(safe_get('District ID')),
+                            beat_id=safe_int(safe_get('Beat ID')),
+                            call_source_id=safe_int(safe_get('Source ID')),
+                            close_code_id=safe_int(safe_get('Close Code ID')),
+                            geox=safe_float(c['Longitude']),
+                            geoy=safe_float(c['Latitude']))
+                    continue
 
                 call = Call(call_id=c['Internal ID'],
                             agency=self.agency,
@@ -170,10 +209,13 @@ class Command(BaseCommand):
                 Call.objects.bulk_create(calls)
                 self.log("Call {}-{} created".format(start, start + len(batch)))
                 start += self.batch_size
-            except Exception as ex:
-                the_exception = ex
-                import pdb
-                pdb.set_trace()
+            except IntegrityError as ex:
+                # TODO fix call
+                self.log("Duplicates found")
+                calls = uniq_list_by_key(calls, lambda call: call.call_id)
+                Call.objects.bulk_create(calls)
+                self.log("Call {}-{} created".format(start, start + len(batch)))
+                start += self.batch_size
 
     def create_beats(self):
         self.log("Creating beats")
