@@ -252,6 +252,16 @@ export var Heatmap = function (options) {
             };
         };
 
+        var tooltipTop = 0;
+        var tooltipLeft = 0;
+
+        tooltip.position = function () {
+            return {
+                top: tooltipTop,
+                left: tooltipLeft,
+            };
+        };
+
         hours.on("mouseover", function (d, i) {
             var hideTooltip = _.isUndefined(getValue(d));
             if (hideTooltip) {
@@ -262,7 +272,8 @@ export var Heatmap = function (options) {
         }).on("mouseout", function () {
             tooltip.hidden(true);
         }).on("mousemove", function () {
-            tooltip.position({top: d3.event.pageY, left: d3.event.pageX})();
+            tooltipTop = d3.event.pageY;
+            tooltipLeft = d3.event.pageX;
         });
 
         svg.selectAll(".legend").remove();

@@ -28,6 +28,7 @@ class SiteConfiguration(SingletonModel):
 
     # Features
     use_shift = models.BooleanField("Use shift?", default=False)
+    use_department = models.BooleanField("Use department?", default=False)
     use_district = models.BooleanField("Use district?", default=False)
     use_beat = models.BooleanField("Use beat?", default=False)
     use_squad = models.BooleanField("Use squad?", default=False)
@@ -246,6 +247,7 @@ class Call(models.Model):
     officer_response_time = models.DurationField(blank=True, null=True,
                                                  db_index=True)
     overall_response_time = models.DurationField(blank=True, null=True)
+    department = models.ForeignKey('Department', blank=True, null=True)
 
     def update_derived_fields(self):
         self.month_received = self.time_received.month
@@ -308,7 +310,7 @@ class CallSource(ModelWithDescr):
         db_table = 'call_source'
 
 
-class CallUnit(ModelWithDescr):
+class CallUnit(models.Model):
     call_unit_id = models.AutoField(primary_key=True)
     agency = models.ForeignKey('Agency')
     squad = models.ForeignKey('Squad', blank=True, null=True,
@@ -317,9 +319,19 @@ class CallUnit(ModelWithDescr):
     district = models.ForeignKey("District", blank=True, null=True,
                                  related_name="+")
     is_patrol_unit = models.BooleanField(default=True)
+    department = models.ForeignKey('Department', blank=True, null=True)
+    descr = models.TextField("Description")
+
+    def __str__(self):
+        if self.descr:
+            return self.descr
+        else:
+            return super().__str__()
 
     class Meta:
         db_table = 'call_unit'
+        ordering = ['descr']
+        unique_together = ("agency", "descr")
 
 
 class City(ModelWithDescr):
@@ -335,6 +347,13 @@ class CloseCode(ModelWithCodeAndDescr):
 
     class Meta:
         db_table = 'close_code'
+
+
+class Department(ModelWithDescr):
+    department_id = models.AutoField(primary_key=True)
+
+    class Meta:
+        db_table = 'department'
 
 
 class District(models.Model):

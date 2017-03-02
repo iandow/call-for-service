@@ -4,6 +4,9 @@
     <filter-button field="shift"/>
     {{ /if }}
     <filter-button field="dow_received"/>
+    {{ #if config.use_department }}
+    <filter-button field="department"/>
+    {{ /if }}
     {{ #if config.use_district }}
     <filter-button field="district"/>
     {{ /if }}

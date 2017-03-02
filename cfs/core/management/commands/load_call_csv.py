@@ -20,13 +20,15 @@ from django.core.management.base import BaseCommand
 # - Source
 # - District
 # - Beat
+# - Primary Unit
+# - Department
 # - Nature Code
 # - Nature Text
 # - Close Code
 # - Close Text
 from core.models import (District, Beat, Priority, Nature, CallSource,
-                         CloseCode, Call,
-                         City, Agency)
+                         CloseCode, Call, City, Agency, Department,
+                         CallUnit)
 
 
 def isnan(x):
@@ -118,6 +120,8 @@ class Command(BaseCommand):
             ('Close Code', self.create_close_codes),
             ('Source Code', self.create_sources),
             ('City', self.create_cities),
+            ('Department', self.create_departments),
+            ('Primary Unit', self.create_primary_units),
         ]
 
         for col, method in creation_methods:
@@ -155,6 +159,8 @@ class Command(BaseCommand):
                             beat_id=safe_int(safe_get('Beat ID')),
                             call_source_id=safe_int(safe_get('Source ID')),
                             close_code_id=safe_int(safe_get('Close Code ID')),
+                            department_id=safe_int(safe_get('Department ID')),
+                            primary_unit_id=safe_int(safe_get('Primary Unit ID')),
                             geox=safe_float(c['Longitude']),
                             geoy=safe_float(c['Latitude']))
                 call.update_derived_fields()
@@ -214,6 +220,18 @@ class Command(BaseCommand):
         df['Priority ID'] = df['Priority'].apply(lambda x: priority_map.get(x),
                                                  convert_dtype=False)
 
+    def create_departments(self):
+        self.log("Creating departments")
+        df = self.df
+
+        department_names = safe_sorted(df['Department'].unique())
+        departments = [Department.objects.get_or_create(descr=name)[0]
+                       for name in department_names]
+        department_map = {d.descr: d.department_id for d in departments}
+        df['Department ID'] = df['Department'].apply(
+            lambda x: department_map.get(x),
+            convert_dtype=False)
+
     def create_sources(self):
         self.log("Creating sources")
         df = self.df
@@ -257,3 +275,38 @@ class Command(BaseCommand):
         df['Close Code ID'] = df['Close Code'].apply(
             lambda x: close_code_map.get(x),
             convert_dtype=False)
+
+    def create_primary_units(self):
+        self.log("Creating primary units")
+        df = self.df
+
+        if 'Department ID' in df.columns:
+            # Units are per-department; include department in our consideration
+            unit_series = df[['Primary Unit', 'Department ID']]
+
+            unit_departments = safe_sorted(
+                (c['Primary Unit'], c['Department ID']) for _, c in unit_series.drop_duplicates().iterrows()
+                if not isnan(c['Primary Unit'])
+            )
+
+            units = []
+            for unit, department_id in unit_departments:
+                units.append(CallUnit.objects.get_or_create(descr=unit,
+                                                            agency=self.agency,
+                                                            department_id=department_id)[0])
+
+            unit_map = {u.descr: u.call_unit_id for u in units}
+            df['Primary Unit ID'] = df['Primary Unit'].apply(lambda x: unit_map.get(x),
+                                                             convert_dtype=False)
+        else:
+            # No departments; just consider unit names
+            unit_series = df['Primary Unit']
+
+            unit_names = safe_sorted(unit_series.unique())
+            units = [CallUnit.objects.get_or_create(descr=name, agency=self.agency)[0]
+                    for name in unit_names]
+            unit_map = {u.descr: u.call_unit_id for u in units}
+            df['Primary Unit ID'] = df['Primary Unit'].apply(lambda x: unit_map.get(x),
+                                                             convert_dtype=False)
+
+

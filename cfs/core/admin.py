@@ -8,7 +8,7 @@ from .models import Agency, Beat, Bureau, CallSource, CallUnit, City, \
     District, Division, Nature, NatureGroup, \
     Officer, \
     Priority, Shift, ShiftUnit, SiteConfiguration, Squad, \
-    Transaction, Unit
+    Transaction, Unit, Department
 
 
 @admin.register(SiteConfiguration)
@@ -21,6 +21,7 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
         ('Features', {
             'fields': (
                 'use_shift',
+                'use_department',
                 'use_district',
                 'use_beat',
                 'use_squad',
@@ -144,6 +145,14 @@ class CityAdmin(admin.ModelAdmin):
 @admin.register(CloseCode)
 class CloseCodeAdmin(admin.ModelAdmin):
     list_display = ('descr', 'code',)
+    formfield_overrides = {
+        models.TextField: {'widget': TextInput}
+    }
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ('descr',)
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }

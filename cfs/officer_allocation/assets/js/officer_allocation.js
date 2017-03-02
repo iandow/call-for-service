@@ -195,26 +195,21 @@ function buildAllocationOverTimeChart(data) {
         updateState: false,
     });
 
+    var formatTime = function (d) {
+        return d3.time.format("%X")(new Date(d));
+    };
+
 
     chart.xAxis
       .axisLabel("Time")
-      .tickFormat(function(d) {
-        return d3.time.format("%X")(new Date(d));
-      });
+      .tickFormat(formatTime);
 
     chart.yAxis
       .axisLabel("Average Officers Allocated")
-      .tickFormat(d3.format(",.2r"));
+      .tickFormat(d3.format(",.3r"));
 
-    // Keep NaNs from showing up in the tooltip header
-    // This was supposed to have been fixed, but
-    // apparently, it wasn't
-    //
-    // https://github.com/novus/nvd3/issues/1081
     chart.interactiveLayer.tooltip
-      .headerFormatter(function(d) {
-        return d;
-      });
+      .headerFormatter(formatTime);
 
     svg.datum(data).call(chart);
     nv.utils.windowResize(function() {
