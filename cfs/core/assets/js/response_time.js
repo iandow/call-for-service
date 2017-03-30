@@ -16,7 +16,7 @@ import colorbrewer from "colorbrewer";
 import nv from "nvd3";
 
 
-var url = "/api/response_time/";
+var url = "/api/" + AGENCY.code + "/response_time/";
 
 function durationFormat(secs) {
     secs = Math.round(secs);
@@ -37,7 +37,7 @@ var dashboard = new Page({
         "capitalize": function (string) {
             return string.charAt(0).toUpperCase() + string.slice(1);
         },
-        config: siteConfig,
+        config: SITE_CONFIG,
         data: {}
     },
     filterUpdated: function (filter) {
@@ -52,14 +52,14 @@ var dashboard = new Page({
 });
 
 function cleanupData(data) {
-    if (siteConfig.use_beat) {
+    if (SITE_CONFIG.use_beat) {
         data.map_data = _.reduce(
             data.officer_response_time_by_beat,
             function (memo, d) {
                 memo[d.name] = d.mean;
                 return memo;
             }, {});
-    } else if (siteConfig.use_district) {
+    } else if (SITE_CONFIG.use_district) {
         data.map_data = _.reduce(
             data.officer_response_time_by_district,
             function (memo, d) {
@@ -159,13 +159,18 @@ function cleanupData(data) {
     return data;
 }
 
-if (siteConfig.use_beat || siteConfig.use_district) {
+if (SITE_CONFIG.use_beat || SITE_CONFIG.use_district) {
+    const region = SITE_CONFIG.use_beat
+          ? 'beat'
+          : 'district';
+
     var responseTimeMap = new RegionMap({
         el: "#map",
         dashboard: dashboard,
         colorScheme: colorbrewer.Oranges,
         format: durationFormat,
-        dataDescr: "Officer Response Time"
+        dataDescr: "Officer Response Time",
+        region: region
     });
 
     monitorChart(dashboard, "data.map_data", responseTimeMap.update);
@@ -211,7 +216,7 @@ var ortByPriorityChart = new DiscreteBarChart({
 monitorChart(dashboard, "data.officer_response_time_by_priority", ortByPriorityChart.update);
 
 
-if (siteConfig.use_shift) {
+if (SITE_CONFIG.use_shift) {
     var ortByShiftChart = new HorizontalBarChart({
         el: "#ort-by-shift",
         filter: "shift",
@@ -230,7 +235,7 @@ if (siteConfig.use_shift) {
     monitorChart(dashboard, "data.officer_response_time_by_shift", ortByShiftChart.update);
 }
 
-if (siteConfig.use_district) {
+if (SITE_CONFIG.use_district) {
     var ortByDistrictChart = new HorizontalBarChart({
         el: "#ort-by-district",
         filter: "district",
@@ -250,7 +255,7 @@ if (siteConfig.use_district) {
 }
 
 var ortByNatureGroupChart = null;
-if (siteConfig.use_nature_group) {
+if (SITE_CONFIG.use_nature_group) {
     ortByNatureGroupChart = new DiscreteBarChart({
         el: "#ort-by-nature",
         dashboard: dashboard,
@@ -269,7 +274,7 @@ if (siteConfig.use_nature_group) {
 
     monitorChart(dashboard, "data.officer_response_time_by_nature_group",
         ortByNatureGroupChart.update);
-} else if (siteConfig.use_nature) {
+} else if (SITE_CONFIG.use_nature) {
     ortByNatureGroupChart = new DiscreteBarChart({
         el: "#ort-by-nature",
         dashboard: dashboard,
@@ -565,6 +570,16 @@ function buildORTChart(data) {
         };
     };
 
+    var tooltipTop = 0;
+    var tooltipLeft = 0;
+
+    tooltip.position = function () {
+        return {
+            top: tooltipTop,
+            left: tooltipLeft,
+        };
+    };
+
     g
         .on("mouseover", function (d, i) {
             tooltip.data(tooltipData(d, i)).hidden(false);
@@ -573,7 +588,8 @@ function buildORTChart(data) {
             tooltip.data(tooltipData(d, i)).hidden(true);
         })
         .on("mousemove", function () {
-            tooltip.position({top: d3.event.pageY, left: d3.event.pageX})();
+            tooltipTop = d3.event.pageY;
+            tooltipLeft = d3.event.pageX;
         });
 
     function resize() {

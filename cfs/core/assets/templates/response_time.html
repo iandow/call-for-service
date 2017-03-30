@@ -45,8 +45,8 @@
                             </div>
                         </div>
                     </div>
+                    {{ #if config.use_beat }}
                     <div class="col-md-6 col-lg-5">
-                        {{ #if config.use_beat }}
                         <chart-header
                                 title="Officer Mean Response Time By Beat">
                             This map shows us average officer response time for
@@ -54,13 +54,28 @@
                             click any beat here to filter the calls to only that
                             beat's calls.
                         </chart-header>
-                        {{ /if }}
 
                         <div id="map-container">
                             <div id="legend"></div>
                             <div id="map"></div>
                         </div>
                     </div>
+                    {{ elseif config.use_district }}
+                    <div class="col-md-6 col-lg-5">
+                        <chart-header
+                                title="Officer Mean Response Time By District">
+                            This map shows us average officer response time for
+                            each district for the current call selection. You can
+                            click any district here to filter the calls to only that
+                            district's calls.
+                        </chart-header>
+
+                        <div id="map-container">
+                            <div id="legend"></div>
+                            <div id="map"></div>
+                        </div>
+                    </div>
+                    {{ /if }}
                 </div>
                 <div class="row">
 

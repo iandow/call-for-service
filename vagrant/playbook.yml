@@ -4,11 +4,17 @@
   become_user: root
   become_method: sudo
   tasks:
-    - name: Add apt keys
-      apt_key: url={{item}}
-      with_items:
-        - https://www.postgresql.org/media/keys/ACCC4CF8.asc
-        - https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+    - name: Add postgres apt key
+      apt_key:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        state: present
+
+    - name: Add node apt key
+      apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280
+        id: "68576280"
+        state: present
+
     - name: Add PPAs
       apt_repository: repo="{{item}}"
       with_items:
@@ -19,6 +25,7 @@
     - name: Install dev tools
       apt: name={{item}} state=present
       with_items:
+        - acl
         - build-essential
         - git
         - python3

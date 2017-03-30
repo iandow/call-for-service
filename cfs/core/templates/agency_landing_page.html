@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% spaceless %}
+{% load staticfiles %}
+{% load hooks_tags %}
+{% load render_bundle from webpack_loader %}
+{% endspaceless %}
+
+{% block stylesheets %}
+{% render_bundle 'landing_page' 'css' %}
+<style>
+    .navbar {
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+
+    #banner {
+        background: url({% static "img/banner.jpg" %}) no-repeat top center fixed;
+        -webkit-background-size: contain; /* For WebKit*/
+        -moz-background-size: contain; /* Mozilla*/
+        -o-background-size: contain; /* Opera*/
+        background-size: contain; /* Generic*/
+    }
+
+    #banner h1 {
+        color: white;
+        font-weight: bold;
+    }
+
+    #banner h2 {
+        color: white;
+    }
+
+    .banner-text {
+        background-color: rgba(0, 0, 0, 0.4);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 2px;
+        margin-bottom: 90px;
+    }
+
+    .action-icons {
+        text-align: center;
+    }
+
+    .action-icons a {
+        text-decoration: none;
+        color: #555;
+    }
+</style>
+{% endblock %}
+
+
+{% block javascript %}
+{% render_bundle 'landing_page' 'js' %}
+{% endblock %}
+
+{% block content_without_container %}
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand"
+               href="{% url 'call_volume' agency_code=agency.code %}">
+                {{ agency.code }} CFS
+            </a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li><a href="{% url 'call_volume' agency_code=agency.code %}">Call
+                Volume</a></li>
+            <li><a href="{% url 'response_time' agency_code=agency.code %}">Response
+                Time</a></li>
+            <li><a href="{% url 'call_map' agency_code=agency.code %}">Utilization</a>
+            </li>
+            {% hook 'landing_page_navbar' %}
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+            {% if agencies|length > 1 %}
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                   role="button" aria-haspopup="true" aria-expanded="false">
+                    Choose another agency
+                    <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                    {% for ag in agencies %}
+                    {% if ag != agency %}
+                    <li>
+                        <a href="{% url 'agency' agency_code=ag.code %}">
+                            {{ ag.descr }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<div class="visible-xs visible-sm">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>{{ agency.code }} CFS Analytics</h1>
+                <h2>Turning CFS data into operational and strategic
+                    intelligence</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="jumbotron hidden-xs hidden-sm" id="banner">
+    <div class="container">
+        <div class="row">
+            <div class="banner-text col-md-12">
+                <h1>{{ agency.code }} CFS Analytics</h1>
+                <h2>Turning CFS data into operational and strategic
+                    intelligence</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row action-icons">
+        <div class="col-md-4">
+            <div>
+                <a href="{% url 'call_volume' agency_code=agency.code %}">
+                    <i class="fa fa-phone fa-5x fa-border"></i>
+                </a>
+            </div>
+            <h3>
+                <a href="{% url 'call_volume' agency_code=agency.code %}">
+                    Call Volume
+                </a>
+            </h3>
+            <p>Find out when and where services are needed most.</p>
+        </div>
+        <div class="col-md-4">
+            <div>
+                <a href="{% url 'response_time' agency_code=agency.code %}">
+                    <i class="fa fa-clock-o fa-5x fa-border"></i>
+                </a>
+            </div>
+            <h3>
+                <a href="{% url 'response_time' agency_code=agency.code %}">
+                    Response Time
+                </a>
+            </h3>
+            <p>Evaluate performance metrics.</p>
+        </div>
+        <div class="col-md-4">
+            {% if show_allocation %}
+            <div>
+                <a href="{% url 'officer_allocation' agency_code=agency.code %}">
+                    <i class="fa fa-calendar fa-5x fa-border"></i>
+                </a>
+            </div>
+            <h3>
+                <a href="{% url 'officer_allocation' agency_code=agency.code %}">
+                    Officer Allocation
+                </a>
+            </h3>
+            <p>Visualize how your resources are being used.</p>
+            {% else %}
+            <div>
+                <a href="{% url 'call_map' agency_code=agency.code %}">
+                    <i class="fa fa-map-o fa-5x fa-border"></i>
+                </a>
+            </div>
+            <h3>
+                <a href="{% url 'call_map' agency_code=agency.code %}">
+                    Utilization Map
+                </a>
+            </h3>
+            <p>Find high-volume call locations.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

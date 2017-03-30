@@ -15,7 +15,7 @@ import d3 from "d3";
 import moment from "moment";
 import nv from "nvd3";
 
-var url = "/api/officer_allocation/";
+var url = "/api/" + AGENCY.code + "/officer_allocation/";
 
 var OfficerAllocationFilter = Filter.extend({
   template: require("../templates/officer_allocation_filter.html")
@@ -100,11 +100,11 @@ function cleanupData(data) {
     });
     temp_allocation_data[2].values.push({
       "x": time,
-      "y": oos
+      "y": dp
     });
     temp_allocation_data[3].values.push({
       "x": time,
-      "y": dp
+      "y": oos
     });
     temp_allocation_data[4].values.push({
       "x": time,
@@ -195,26 +195,21 @@ function buildAllocationOverTimeChart(data) {
         updateState: false,
     });
 
+    var formatTime = function (d) {
+        return d3.time.format("%X")(new Date(d));
+    };
+
 
     chart.xAxis
       .axisLabel("Time")
-      .tickFormat(function(d) {
-        return d3.time.format("%X")(new Date(d));
-      });
+      .tickFormat(formatTime);
 
     chart.yAxis
       .axisLabel("Average Officers Allocated")
-      .tickFormat(d3.format(",.2r"));
+      .tickFormat(d3.format(",.3r"));
 
-    // Keep NaNs from showing up in the tooltip header
-    // This was supposed to have been fixed, but
-    // apparently, it wasn't
-    //
-    // https://github.com/novus/nvd3/issues/1081
     chart.interactiveLayer.tooltip
-      .headerFormatter(function(d) {
-        return d;
-      });
+      .headerFormatter(formatTime);
 
     svg.datum(data).call(chart);
     nv.utils.windowResize(function() {

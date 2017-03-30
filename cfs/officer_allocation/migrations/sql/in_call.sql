@@ -3,6 +3,8 @@ For each call, displays the start (dispatched) and end (cleared) times for each 
 call_unit_id of that unit.
 
 The view is materialized because it takes several seconds to create.  This is inefficient when querying it multiple times.
+
+NOTE: This is an older version of the view that contains some hard-coded values from Durham's data.  Refer to "generalized_in_call.sql" for the updated version.
 */
 
  -- ensure these indexes exist or else it will be super slow

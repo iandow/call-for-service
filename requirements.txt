@@ -4,7 +4,7 @@ django-admin-sortable==2.0.17
 django-appconf==1.0.1
 django-bower==5.0.4
 django-cors-headers==1.1.0
-django-debug-toolbar==1.4
+django-debug-toolbar==1.5
 django-extensions==1.5.6
 django-libsass==0.4
 django-nose==1.4.1

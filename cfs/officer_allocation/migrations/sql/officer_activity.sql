@@ -2,6 +2,9 @@
 This view has a row for each instance of officer activity -- being in a call,
 being on duty, and/or being out of service.  Note that there could be significant
 overlap here.  We'll use this to drive the officer allocation view.
+
+NOTE: Some of this is specific for Durham data; see
+"generalized_officer_activity.sql" for the more recent version.
 */
 
 -- Lookup table for the different types of activity

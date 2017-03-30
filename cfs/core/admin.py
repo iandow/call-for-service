@@ -3,11 +3,12 @@ from django.forms import TextInput
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
 from adminsortable.admin import SortableAdmin
-from .models import Beat, Bureau, CallSource, CallUnit, City, CloseCode, \
+from .models import Agency, Beat, Bureau, CallSource, CallUnit, City, \
+    CloseCode, \
     District, Division, Nature, NatureGroup, \
     Officer, \
     Priority, Shift, ShiftUnit, SiteConfiguration, Squad, \
-    Transaction, Unit
+    Transaction, Unit, Department
 
 
 @admin.register(SiteConfiguration)
@@ -17,12 +18,10 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
         (None, {
             'fields': ('maintenance_mode',)
         }),
-        ('Department', {
-            'fields': ('department_name', 'department_abbr',),
-        }),
         ('Features', {
             'fields': (
                 'use_shift',
+                'use_department',
                 'use_district',
                 'use_beat',
                 'use_squad',
@@ -45,12 +44,11 @@ class SiteConfigurationAdmin(SingletonModelAdmin):
     )
 
 
-### model inline classes
+# model inline classes
 
 class BeatInline(admin.TabularInline):
     model = Beat
     extra = 0
-    exclude = ('sector',)
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
@@ -73,13 +71,34 @@ class NatureInline(admin.StackedInline):
     can_delete = False
 
 
-
 class ShiftUnitInline(admin.TabularInline):
     model = ShiftUnit
     extra = 0
 
 
-### model admin classes
+# model admin classes
+
+@admin.register(Agency)
+class AgencyAdmin(admin.ModelAdmin):
+    list_display = ('descr', 'code',)
+
+    fieldsets = (
+        (None, {
+            'fields': ('code', 'descr',)
+        }),
+        ('Geography', {
+            'description': "These fields are optional. They override the same "
+                           "settings in the site configuration.",
+            'fields': (
+                'geo_center',
+                'geo_ne_bound',
+                'geo_sw_bound',
+                'geo_default_zoom',
+                'geojson_url',
+            )
+        })
+    )
+
 
 @admin.register(Beat)
 class BeatAdmin(admin.ModelAdmin):
@@ -101,7 +120,7 @@ class BureauAdmin(admin.ModelAdmin):
 
 @admin.register(CallSource)
 class CallSourceAdmin(admin.ModelAdmin):
-    list_display = ('descr', 'code',)
+    list_display = ('descr', 'code', 'is_self_initiated',)
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
@@ -109,7 +128,7 @@ class CallSourceAdmin(admin.ModelAdmin):
 
 @admin.register(CallUnit)
 class CallUnitAdmin(admin.ModelAdmin):
-    list_display = ('descr', 'squad', 'beat', 'district',)
+    list_display = ('descr', 'squad', 'beat', 'district', 'is_patrol_unit',)
     inlines = [ShiftUnitInline]
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
@@ -131,9 +150,16 @@ class CloseCodeAdmin(admin.ModelAdmin):
     }
 
 
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ('descr',)
+    formfield_overrides = {
+        models.TextField: {'widget': TextInput}
+    }
+
+
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    exclude = ('sector',)
     inlines = [BeatInline, CallUnitInline]
     formfield_overrides = {
         models.TextField: {'widget': TextInput(attrs={'size': '50'})}
@@ -154,7 +180,7 @@ class NatureAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.TextField: {'widget': TextInput}
     }
-    list_display = ('descr', 'nature_group',)
+    list_display = ('descr', 'nature_group', 'is_directed_patrol',)
 
 
 @admin.register(NatureGroup)
@@ -198,7 +224,7 @@ class SquadAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('code',)
+    list_display = ('descr', 'code', 'is_start', 'is_end',)
 
 
 @admin.register(Unit)

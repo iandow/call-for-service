@@ -21,7 +21,7 @@ var Cluster = require(
 var PruneClusterForLeaflet = Cluster.PruneClusterForLeaflet;
 var PruneCluster = Cluster.PruneCluster;
 
-var url = "/api/call_map/";
+var url = "/api/" + AGENCY.code + "/call_map/";
 
 var dashboard = new Page({
     el: document.getElementById("dashboard"),
@@ -123,24 +123,26 @@ var ClusterMap = function (options) {
         var locations = dashboard.get('data.locations');
         if (locations) {
             locations = locations.filter(function (d) {
-                return bounds.contains(new L.LatLng(d.lat, d.lng))
+                return !_.isNull(d.lat)
+                    && !_.isNull(d.lng)
+                    && bounds.contains(new L.LatLng(d.lat, d.lng));
             });
             dashboard.set('data.top_locations', getTopAddresses(locations, 20));
         }
     }
 
     this.create = function () {
-        var northEast = L.latLng.apply(null, siteConfig.geo_ne_bound),
-            southWest = L.latLng.apply(null, siteConfig.geo_sw_bound),
+        var northEast = L.latLng.apply(null, MAP_INFO.neBound),
+            southWest = L.latLng.apply(null, MAP_INFO.swBound),
             bounds = L.latLngBounds(southWest, northEast);
 
         var map = L.map(
             "map", {
-                center: siteConfig.geo_center,
-                zoom: siteConfig.geo_default_zoom,
+                center: MAP_INFO.center,
+                zoom: MAP_INFO.zoom,
                 maxBounds: bounds,
-                minZoom: Math.min(siteConfig.geo_default_zoom, 11),
-                maxZoom: Math.max(siteConfig.geo_default_zoom, 18),
+                minZoom: Math.min(MAP_INFO.zoom, 11),
+                maxZoom: Math.max(MAP_INFO.zoom, 18),
                 scrollWheelZoom: true
             });
         this.map = map;
@@ -182,12 +184,28 @@ var ClusterMap = function (options) {
             layer.on({});
         }
 
+        const geojsonURL = MAP_INFO.geojsonURL;
+        let region;
+        if (SITE_CONFIG.use_beat) {
+            region = 'beat';
+        }
+        else if (SITE_CONFIG.use_district) {
+            region = 'district';
+        }
+
+        if (!geojsonURL) {
+            throw "You must set a URL to your GeoJSON file in core settings before using this map.";
+        }
+        else if (!region) {
+            throw "You must select either beat or district in core settings before using this map.";
+        }
+
         d3.json(
-            "/static/beats.json",
+            MAP_INFO.geojsonURL,
             function (json) {
                 json.features = _(json.features).reject(
                     function (d) {
-                        return d.properties.LAWDIST === "DSO";
+                        return !d.properties[region];
                     });
 
                 var myStyle = {

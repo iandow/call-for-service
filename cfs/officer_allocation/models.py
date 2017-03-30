@@ -24,9 +24,14 @@ class OfficerActivity(MaterializedView):
         managed = False
 
     @classmethod
+    def dependencies(cls):
+        return [InCallPeriod]
+
+    @classmethod
     def update_view(cls):
         with connection.cursor() as cursor:
             cursor.execute("REFRESH MATERIALIZED VIEW officer_activity")
+            cursor.execute("REFRESH MATERIALIZED VIEW time_sample")
             cursor.execute(
                 "REFRESH MATERIALIZED VIEW discrete_officer_activity")
 
@@ -42,8 +47,6 @@ class InCallPeriod(MaterializedView):
     in_call_id = models.IntegerField(primary_key=True)
     call_unit = models.ForeignKey(CallUnit, db_column="call_unit_id",
                                   related_name="+")
-    shift = models.ForeignKey(Shift, db_column="shift_id",
-                              related_name="+")
     call = models.ForeignKey(Call, db_column="call_id",
                              related_name="+",
                              on_delete=models.DO_NOTHING)
