@@ -4,6 +4,7 @@ import datetime as dt
 import math
 from django.db import connection
 
+
 class Command(BaseCommand):
     help = "My shiny new management command."
 
@@ -39,23 +40,26 @@ class Command(BaseCommand):
                 print("Shifting call log data...")
                 cursor.execute("""
     UPDATE call_log SET time_recorded = time_recorded + INTERVAL %s;
-                """, ("{} days".format(weeks*7),))
-                
-                print("Shifting call notes...")
-                cursor.execute("""
-    UPDATE note SET time_recorded = time_recorded + INTERVAL %s;
-                """, ("{} days".format(weeks*7),))
+                """, ("{} days".format(weeks * 7),))
+
+                try:
+                    print("Shifting call notes...")
+                    cursor.execute("""
+        UPDATE note SET time_recorded = time_recorded + INTERVAL %s;
+                    """, ("{} days".format(weeks * 7),))
+                except:
+                    pass
 
                 print("Shifting officer allocation data...")
                 cursor.execute("""
     UPDATE shift_unit SET in_time = in_time + INTERVAL %s,
                           out_time = out_time + INTERVAL %s;
-                """, ("{} days".format(weeks*7),) * 2)
+                """, ("{} days".format(weeks * 7),) * 2)
 
                 cursor.execute("""
     UPDATE out_of_service SET start_time = start_time + INTERVAL %s,
                           end_time = end_time + INTERVAL %s;
-                """, ("{} days".format(weeks*7),) * 2)
+                """, ("{} days".format(weeks * 7),) * 2)
 
                 print("Refreshing materialized views...")
                 cursor.execute("""
