@@ -263,7 +263,7 @@ class CallResponseTimeOverview(CallOverview):
 class CallMapOverview(CallOverview):
 
     def locations(self):
-        return self.qs.exclude(geox__isnull=True).exclude(geoy__isnull=True) \
+        return self.qs.exclude(geox="NaN").exclude(geoy="NaN") \
             .values_list('geoy', 'geox', 'street_address', 'business', 'nature__descr')
 
     def top_users(self):
