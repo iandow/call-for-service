@@ -5,9 +5,15 @@ import os.path
 import re
 from itertools import chain
 import pandas as pd
+import dateparser
 from django.db import connection
+from django.db.utils import IntegrityError
 from django.core.management import call_command
+from django.core.exceptions import FieldDoesNotExist
 from core.models import *
+from officer_allocation.models import *
+import psycopg2
+from datetime import datetime
 
 
 # TODO
@@ -46,8 +52,13 @@ def safe_int(x):
 def safe_datetime(x):
     # to_datetime returns a pandas Timestamp object, and we want a datetime
     try:
-        return pd.to_datetime(x).to_datetime() if x not in (
-            'NULL', None) else None
+        retval = pd.to_datetime(x).to_pydatetime() if x not in (
+            'NULL', 'NaT', None) else None
+        if isinstance(retval, pd.tslib.NaTType):
+            return None
+        else:
+            return retval
+        # return dateparser.parse(x) if x not in ('NULL', None) else None
     except ValueError:
         return None
 
@@ -78,27 +89,6 @@ timestamp_expr = re.compile(
     "(.*?)\[(\d{2}/\d{2}/(?:\d{2}|\d{4}) \d{2}:\d{2}:\d{2}) (.*?)\]")
 
 
-def split_notes(notes):
-    """
-    Return a list of tuples.  Each tuple represents a single note and contains the corresponding call_id,
-    the timestamp, the note-taker, and the text of the note.
-    """
-    tuples = []
-    if notes is None or isnan(notes):
-        return []
-    regex_split = re.findall(timestamp_expr, notes)
-    for tup in regex_split:
-        text = tup[0].split()
-        text = " ".join(text) if text else None  # turn blanks into null
-        try:
-            timestamp = dt.datetime.strptime(tup[1], "%m/%d/%y %H:%M:%S")
-        except ValueError:  # 4 digit year
-            timestamp = dt.datetime.strptime(tup[1], "%m/%d/%Y %H:%M:%S")
-        author = tup[2] if tup[2] else None
-        tuples.append((text, timestamp, author))
-    return tuples
-
-
 def isnan(x):
     return type(x) == float and math.isnan(x)
 
@@ -107,6 +97,14 @@ def unique_clean_values(column):
     return {x.strip()
             for x in pd.unique(column.values)
             if x and not isnan(x) and x.strip()}
+
+
+def model_has_field(model, field):
+    try:
+        model._meta.get_field(field)
+        return True
+    except FieldDoesNotExist:
+        return False
 
 
 class ETL:
@@ -118,6 +116,7 @@ class ETL:
         self.start_time = None
         self.batch_size = batch_size
         self.reset = reset
+        self.agency = Agency.objects.first()
 
     def run(self):
         self.start_time = dt.datetime.now()
@@ -139,9 +138,6 @@ class ETL:
         self.mapping['Nature'] = self.create_from_calls(column="nature",
                                                         model=Nature,
                                                         to_field="nature_id")
-        self.mapping['ZipCode'] = self.create_from_calls(column="zip",
-                                                         model=ZipCode,
-                                                         to_field="zip_code_id")
         self.mapping['Priority'] = self.create_from_calls(column="priority",
                                                           model=Priority,
                                                           to_field="priority_id")
@@ -183,7 +179,6 @@ class ETL:
             code_column="Code",
             to_field="oos_code_id"
         )
-        self.mapping['NoteAuthor'] = self.create_note_authors()
         self.connect_beats_districts()
         self.create_calls()
         self.calls = None
@@ -255,7 +250,12 @@ class ETL:
         xs = unique_clean_values(self.calls[column])
         xs -= self.get_key_set(model, from_field)
 
-        model.objects.bulk_create(model(**{from_field: x}) for x in xs)
+        if model_has_field(model, 'agency'):
+            model.objects.bulk_create(
+                model(**{from_field: x, 'agency': self.agency}) for x in xs)
+        else:
+            model.objects.bulk_create(model(**{from_field: x}) for x in xs)
+
         return dict(model.objects.values_list(from_field, to_field))
 
     def create_from_lookup(self, model, filename, mapping, code_column,
@@ -303,35 +303,21 @@ class ETL:
         unitset = {unit.strip() for unit in values if
                    unit and not isnan(unit) and unit.strip()}
         units_to_create = unitset - current_unit_descrs
-        CallUnit.objects.bulk_create(CallUnit(descr=unit)
+        CallUnit.objects.bulk_create(CallUnit(agency=self.agency, descr=unit)
                                      for unit in units_to_create)
         return dict(CallUnit.objects.values_list('descr', 'call_unit_id'))
 
-    def create_note_authors(self):
-        self.log("Creating note authors...")
-        notes = flatmap(split_notes, self.calls.notes.values)
-        note_authors = set()
-        for note in notes:
-            if note[2] is not None:
-                note_authors.add(note[2])
-
-        # Don't create authors we already have
-        note_authors -= self.get_key_set(NoteAuthor, 'descr')
-
-        NoteAuthor.objects.bulk_create(
-            [NoteAuthor(descr=n) for n in note_authors])
-        return dict(NoteAuthor.objects.values_list('descr', 'note_author_id'))
-
     def create_calls(self):
+        from django.forms.models import model_to_dict
         try:
             start = 0
             while start < len(self.calls):
                 batch = self.calls[start:start + self.batch_size]
                 calls = []
-                notes = []
 
                 for idx, c in batch.iterrows():
                     call = Call(call_id=c.inci_id,
+                                agency=self.agency,
                                 time_received=safe_datetime(c.calltime),
                                 case_id=clean_case_id(c.case_id),
                                 call_source_id=self.map('CallSource',
@@ -340,10 +326,10 @@ class ETL:
                                                          c.primeunit),
                                 first_dispatched_id=self.map('CallUnit',
                                                              c.firstdisp),
-                                street_num=safe_int(c.streetno),
-                                street_name=c.streetonly,
+                                street_address="{} {}".format(
+                                    c.streetno, c.streetonly),
                                 city_id=self.map('City', c.citydesc),
-                                zip_code_id=self.map('ZipCode', c.zip),
+                                zip_code=c.zip,
                                 crossroad1=c.crossroad1,
                                 crossroad2=c.crossroad2,
                                 geox=safe_float(c.geox),
@@ -368,21 +354,8 @@ class ETL:
                                                        c.closecode),
                                 close_comments=c.closecomm)
                     call.update_derived_fields()
-
-                    _notes = split_notes(c.notes)
-                    for n in _notes:
-                        if n[0]:
-                            note = Note(call_id=call.call_id,
-                                        note_author_id=self.map('NoteAuthor',
-                                                                n[2]),
-                                        body=n[0],
-                                        time_recorded=n[1])
-                            notes.append(note)
-
                     calls.append(call)
-
                 Call.objects.bulk_create(calls)
-                Note.objects.bulk_create(notes)
                 self.log("Call {}-{} created".format(start, start + len(batch)))
                 start += self.batch_size
         except ValueError as ex:
@@ -587,7 +560,8 @@ class ETL:
     def shrink_call_log(self):
         self.log("Removing fire and EMS calls from call log...")
         call_ids = set(Call.objects.all().values_list('call_id', flat=True))
-        criterion = self.call_log['inci_id'].map(lambda id: id in call_ids)
+        criterion = self.call_log['inci_id'].map(
+            lambda id: str(id) in call_ids)
         df = self.call_log.loc[criterion]
         self.call_log = df
 
@@ -610,6 +584,7 @@ class ETL:
         return dict(Transaction.objects.values_list('code', 'transaction_id'))
 
     def create_call_log(self):
+        self.log("Creating call log...")
         existing_ids = self.get_key_set(CallLog, 'call_log_id')
 
         try:

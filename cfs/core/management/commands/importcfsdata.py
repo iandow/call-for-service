@@ -8,10 +8,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('dir', type=str, help='Directory containing '
-                'the files to load')
-        parser.add_argument('--reset', type=bool, default=False,
-                help='Whether to clear the database before loading '
-                '(defaults to False)')
+                            'the files to load')
+        parser.add_argument('--reset', action='store_true', default=False,
+                            help='Whether to clear the database before loading '
+                            '(defaults to False)')
 
     def handle(self, *args, **options):
         etl = ETL(dir=options['dir'], reset=options['reset'])
