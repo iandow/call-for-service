@@ -11,6 +11,7 @@ import Q from "q";
 import L from "leaflet";
 import d3 from "d3";
 import _ from "underscore-contrib";
+import proj4 from "proj4";
 
 import "leaflet-easybutton";
 
@@ -22,6 +23,8 @@ var PruneClusterForLeaflet = Cluster.PruneClusterForLeaflet;
 var PruneCluster = Cluster.PruneCluster;
 
 var url = "/api/" + AGENCY.code + "/call_map/";
+
+var wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
 
 var dashboard = new Page({
     el: document.getElementById("dashboard"),
@@ -44,6 +47,18 @@ var dashboard = new Page({
 function cleanData(data) {
     var locations = data.locations.map(function (datum) {
         var loc = [datum[0], datum[1]];
+
+        if (AGENCY.projection) {
+            loc = proj4(AGENCY.projection, wgs84, [loc[1], loc[0]]);
+            if (Math.random() < 0.01) {
+                console.log("loc", loc)
+            }
+        }
+
+        if (AGENCY.coords_flipped) {
+            loc = [loc[1], loc[0]];
+        }
+
         return {
             lat: loc[0],
             lng: loc[1],

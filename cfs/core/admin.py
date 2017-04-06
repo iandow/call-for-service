@@ -95,6 +95,8 @@ class AgencyAdmin(admin.ModelAdmin):
                 'geo_sw_bound',
                 'geo_default_zoom',
                 'geojson_url',
+                'projection',
+                'coords_flipped'
             )
         })
     )

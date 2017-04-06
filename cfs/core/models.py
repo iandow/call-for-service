@@ -123,9 +123,11 @@ class Agency(models.Model):
     Must have a unique code (letters and numbers only) for use in the URL.
     """
     agency_id = models.AutoField(primary_key=True)
-    code = models.CharField("Unique code", max_length=64, unique=True,
-                            validators=[
-                                RegexValidator(regex=r'^[A-Za-z0-9]+$')])
+    code = models.CharField(
+        "Unique code",
+        max_length=64,
+        unique=True,
+        validators=[RegexValidator(regex=r'^[A-Za-z0-9]+$')])
     descr = models.CharField("Description", max_length=255)
 
     # Geography
@@ -135,6 +137,16 @@ class Agency(models.Model):
     geo_default_zoom = models.PositiveIntegerField(
         "Default zoom level", default=11)
     geojson_url = models.CharField(max_length=255, blank=True, null=True)
+    projection = models.CharField(
+        max_length=1023,
+        blank=True,
+        null=True,
+        help_text="The projection definition for this agency's geo coordinates, as seen on https://github.com/proj4js/proj4js. If you do not know what this is, you likely do not need it."
+    )
+    coords_flipped = models.BooleanField(
+        default=False,
+        help_text="Are your coordinates flipped in the database?"
+    )
 
     class Meta:
         verbose_name_plural = 'agencies'
@@ -163,7 +175,7 @@ class CallQuerySet(models.QuerySet):
         if value:
             query = Q(primary_unit__squad_id=value) | Q(
                 first_dispatched__squad_id=value) | Q(
-                reporting_unit__squad_id=value)
+                    reporting_unit__squad_id=value)
             return self.filter(query)
         else:
             return self
@@ -171,19 +183,18 @@ class CallQuerySet(models.QuerySet):
     def unit(self, value):
         if value:
             query = Q(primary_unit_id=value) | Q(
-                first_dispatched_id=value) | Q(
-                reporting_unit_id=value)
+                first_dispatched_id=value) | Q(reporting_unit_id=value)
             return self.filter(query)
         else:
             return self
 
     def initiated_by(self, value):
         if str(value) == "0":
-            return self.filter(
-                call_source=CallSource.objects.get(is_self_initiated=True))
+            return self.filter(call_source=CallSource.objects.get(
+                is_self_initiated=True))
         elif str(value) == "1":
-            return self.exclude(
-                call_source=CallSource.objects.get(is_self_initiated=True))
+            return self.exclude(call_source=CallSource.objects.get(
+                is_self_initiated=True))
         else:
             return self
 
@@ -215,12 +226,12 @@ class Call(models.Model):
     hour_received = models.IntegerField(db_index=True)
     case_id = models.BigIntegerField(blank=True, null=True)
     call_source = models.ForeignKey('CallSource', blank=True, null=True)
-    primary_unit = models.ForeignKey('CallUnit', blank=True, null=True,
-                                     related_name="+")
-    first_dispatched = models.ForeignKey('CallUnit', blank=True, null=True,
-                                         related_name="+")
-    reporting_unit = models.ForeignKey('CallUnit', blank=True, null=True,
-                                       related_name="+")
+    primary_unit = models.ForeignKey(
+        'CallUnit', blank=True, null=True, related_name="+")
+    first_dispatched = models.ForeignKey(
+        'CallUnit', blank=True, null=True, related_name="+")
+    reporting_unit = models.ForeignKey(
+        'CallUnit', blank=True, null=True, related_name="+")
     street_address = models.CharField(max_length=255, blank=True, null=True)
     city = models.ForeignKey('City', blank=True, null=True)
     zip_code = models.CharField(max_length=5, blank=True, null=True)
@@ -244,8 +255,8 @@ class Call(models.Model):
     time_closed = DateTimeNoTZField(blank=True, null=True)
     close_code = models.ForeignKey('CloseCode', blank=True, null=True)
     close_comments = models.TextField(blank=True, null=True)
-    officer_response_time = models.DurationField(blank=True, null=True,
-                                                 db_index=True)
+    officer_response_time = models.DurationField(
+        blank=True, null=True, db_index=True)
     overall_response_time = models.DurationField(blank=True, null=True)
     department = models.ForeignKey('Department', blank=True, null=True)
 
@@ -276,16 +287,16 @@ class Call(models.Model):
         self.update_derived_fields()
 
         if self.district and self.district.agency != self.agency:
-            raise ValidationError(
-                {"agency": "Agency must match district agency."})
+            raise ValidationError({
+                "agency":
+                "Agency must match district agency."
+            })
 
         super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'call'
-        index_together = [
-            ['dow_received', 'hour_received']
-        ]
+        index_together = [['dow_received', 'hour_received']]
 
 
 class CallLog(models.Model):
@@ -313,11 +324,11 @@ class CallSource(ModelWithDescr):
 class CallUnit(models.Model):
     call_unit_id = models.AutoField(primary_key=True)
     agency = models.ForeignKey('Agency')
-    squad = models.ForeignKey('Squad', blank=True, null=True,
-                              related_name="squad")
+    squad = models.ForeignKey(
+        'Squad', blank=True, null=True, related_name="squad")
     beat = models.ForeignKey("Beat", blank=True, null=True, related_name="+")
-    district = models.ForeignKey("District", blank=True, null=True,
-                                 related_name="+")
+    district = models.ForeignKey(
+        "District", blank=True, null=True, related_name="+")
     is_patrol_unit = models.BooleanField(default=True)
     department = models.ForeignKey('Department', blank=True, null=True)
     descr = models.TextField("Description")
@@ -370,7 +381,7 @@ class District(models.Model):
     class Meta:
         ordering = ['descr']
         db_table = 'district'
-        unique_together = ("agency", "descr",)
+        unique_together = ("agency", "descr", )
 
 
 class Division(ModelWithDescr):
@@ -389,7 +400,7 @@ class Nature(ModelWithDescr):
 
     class Meta:
         db_table = 'nature'
-        ordering = ('descr',)
+        ordering = ('descr', )
 
 
 class NatureGroup(ModelWithDescr):
@@ -397,7 +408,7 @@ class NatureGroup(ModelWithDescr):
 
     class Meta:
         db_table = 'nature_group'
-        ordering = ('descr',)
+        ordering = ('descr', )
 
 
 class Officer(models.Model):
@@ -411,11 +422,11 @@ class Officer(models.Model):
 
 class Priority(ModelWithDescr, SortableMixin):
     priority_id = models.AutoField(primary_key=True)
-    sort_order = models.PositiveIntegerField(editable=False, db_index=True,
-                                             default=0)
+    sort_order = models.PositiveIntegerField(
+        editable=False, db_index=True, default=0)
 
     class Meta:
-        ordering = ('sort_order',)
+        ordering = ('sort_order', )
         db_table = 'priority'
         verbose_name_plural = "priorities"
 
@@ -429,26 +440,32 @@ class Shift(models.Model):
 
 class ShiftUnit(models.Model):
     shift_unit_id = models.AutoField(primary_key=True)
-    call_unit = models.ForeignKey(CallUnit, blank=True, null=True,
-                                  db_column="call_unit_id",
-                                  related_name="+")
-    officer = models.ForeignKey(Officer, blank=True, null=True,
-                                db_column="officer_id",
-                                related_name="+")
+    call_unit = models.ForeignKey(
+        CallUnit,
+        blank=True,
+        null=True,
+        db_column="call_unit_id",
+        related_name="+")
+    officer = models.ForeignKey(
+        Officer,
+        blank=True,
+        null=True,
+        db_column="officer_id",
+        related_name="+")
     in_time = DateTimeNoTZField(blank=True, null=True)
     out_time = DateTimeNoTZField(blank=True, null=True)
-    bureau = models.ForeignKey(Bureau, blank=True, null=True,
-                               db_column="bureau_id",
-                               related_name="+")
-    division = models.ForeignKey(Division, blank=True, null=True,
-                                 db_column="division_id",
-                                 related_name="+")
-    unit = models.ForeignKey('Unit', blank=True, null=True,
-                             db_column="unit_id",
-                             related_name="+")
-    shift = models.ForeignKey(Shift, blank=True, null=True,
-                              db_column="shift_id",
-                              related_name="+")
+    bureau = models.ForeignKey(
+        Bureau, blank=True, null=True, db_column="bureau_id", related_name="+")
+    division = models.ForeignKey(
+        Division,
+        blank=True,
+        null=True,
+        db_column="division_id",
+        related_name="+")
+    unit = models.ForeignKey(
+        'Unit', blank=True, null=True, db_column="unit_id", related_name="+")
+    shift = models.ForeignKey(
+        Shift, blank=True, null=True, db_column="shift_id", related_name="+")
 
     class Meta:
         db_table = 'shift_unit'
