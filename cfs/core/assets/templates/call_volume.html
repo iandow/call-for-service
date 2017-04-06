@@ -50,35 +50,6 @@
                         </chart-header>
                     </div>
                     {{ /if }}
-
-                    {{ #if config.use_call_source }}
-                    <div id="volume-by-source" class="col-md-6 col-lg-4">
-                        <chart-header title="Call Volume By Source">
-                            <p>
-                                This chart shows us the percentage of calls
-                                initiated by
-                                an officer versus the percentage created by all
-                                other
-                                means.
-                            </p>
-                        </chart-header>
-                    </div>
-                    {{ /if }}
-
-                    <div id="volume-by-nature" class="col-md-12 col-lg-8">
-                        <chart-header title="Call Volume By Nature">
-                            <p>This chart shows the call volume by the nature of
-                                the
-                                call. You can click any nature here to filter
-                                the calls
-                                to only calls with that nature.</p>
-
-                            <p>The chart only shows the top 30 natures by call
-                                volume.
-                                All other ones are grouped under "ALL
-                                OTHER".</p>
-                        </chart-header>
-                    </div>
                 </div>
             </div>
             {{ #if config.use_beat }}
@@ -108,6 +79,36 @@
             {{ /if }}
         </div>
         <div class="clearfix visible-md-block"></div>
+        <div class="row">
+            {{ #if config.use_call_source }}
+            <div id="volume-by-source" class="col-md-4">
+                <chart-header title="Call Volume By Source">
+                    <p>
+                        This chart shows us the percentage of calls
+                        initiated by
+                        an officer versus the percentage created by all
+                        other
+                        means.
+                    </p>
+                </chart-header>
+            </div>
+            {{ /if }}
+
+            <div id="volume-by-nature" class="col-lg-8">
+                <chart-header title="Call Volume By Nature">
+                    <p>This chart shows the call volume by the nature of
+                        the
+                        call. You can click any nature here to filter
+                        the calls
+                        to only calls with that nature.</p>
+
+                    <p>The chart only shows the top 30 natures by call
+                        volume.
+                        All other ones are grouped under "ALL
+                        OTHER".</p>
+                </chart-header>
+            </div>
+        </div>
         <div class="row">
             <div id="heatmap" class="col-md-12">
                 <chart-header title="Call Volume Heatmap">
