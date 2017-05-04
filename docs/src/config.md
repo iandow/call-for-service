@@ -5,6 +5,10 @@ go to http://localhost:8000/admin/ (or the admin URL for wherever you have
 CFS Analytics installed) and click "Site Configuration". You will also have to
 add agency information under "Agencies".
 
+If you have not already configured an admin user, do so with this command:
+
+    `/vagrant/cfs/manage.py createsuperuser`
+
 ![admin page showing site configuration](config.png)
 
 ![First half of site configuration](config1.png)

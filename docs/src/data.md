@@ -38,6 +38,23 @@ that end in "Code" and "Text" come in pairs and must be matched.
 
 Having additional headers is fine.
 
+## Postgres Setup
+
+If you have not already done so, install a Postgres database, create a new user for it, and ensure it can be accessed by vagrant. To open postgres to everyone, add "host all all 0.0.0.0/0 trust" to pg_hba.conf and "listen_addresses = '*'" to postgresql.conf.
+
+Copy `vagrant/files/credentials.py` to `cfs/webapp_credentials.py` then edit change the username, password and address so it can connect to your Postgres server. When you're done it should look like this:
+
+    creds = {
+    'SECRET_KEY': 'SECRET_KEY',
+    'DEV_DB_NAME': 'cfs',
+    'DEV_DB_USER': 'testuser',
+    'DEV_DB_PASSWORD': 'password',
+    'DEV_DB_ADDRESS': '192.168.0.2'
+    }
+
+Then create a cfs database in postgres if you haven't already.
+
+
 ## Running the load command
 
 From the command line, in the top level directory of this repository, run:
@@ -54,6 +71,15 @@ following command:
 
     ./cfs/manage.py load_call_csv <name of your CSV file> --agency <code of your agency, ex. CPD>
 
+## Loading sample data
+
+A sample dataset containing calls for service in 2017 to the New Orleans Police Department has been downloaded from [https://data.nola.gov/Public-Safety-and-Preparedness/Calls-for-Service-2017/bqmt-f3jk/](https://data.nola.gov/Public-Safety-and-Preparedness/Calls-for-Service-2017/bqmt-f3jk/) and saved in cfs/sample_data/. The original download file is saved as `Calls_for_Service_2017.csv.orig1. A copy of that dataset has been modified to comply with the expected format described above, and saved as `Calls_for_Service_2017.csv`. To load that dataset, run the following commands:
+
+    `/vagrant/cfs/manage.py load_call_csv /vagrant/cfs/sample_data/Calls_for_Service_2017.csv`
+
+If that command completes successfully, you should see several thousand new records in the call table in the cfs postgres database. Here's a sample command to check that table size:
+
+    `/Applications/Postgres.app/Contents/Versions/9.6/bin'/psql -p5432 -d cfs -c "SELECT count(*) from call;"`
 
 
 # Loading data - Officer Allocation
